@@ -700,3 +700,96 @@ func (this *SetupHandler) GetMasterTableSectionPrintCategorySetting(c *gin.Conte
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
+
+
+func (this *SetupHandler) GetMasterUser(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data_tax, err := this.masterService.GetMasterUserList(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data  master user section print category setting!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data_tax))
+}
+
+
+func (this *SetupHandler) GetMasterRoleAccess(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data_tax, err := this.masterService.GetMasterRoleAccess(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data  master MasterRoleAccess!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data_tax))
+}
+
+
+func (this *SetupHandler) GetMenuApp(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data_tax, err := this.masterService.GetMasterMenuApp(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data  master MasterMenuApp!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data_tax))
+}

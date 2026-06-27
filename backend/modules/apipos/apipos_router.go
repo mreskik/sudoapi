@@ -2,6 +2,7 @@ package apipos
 
 import (
 	"APIANDORDER/backend/config"
+	"APIANDORDER/backend/modules/apipos/pushdata"
 	"APIANDORDER/backend/modules/apipos/setup"
 	"net/http"
 
@@ -50,5 +51,20 @@ func Register(app *gin.Engine) {
 	setupRouter.POST("/get_branch_visit_purpose/:branch_id", setupHandler.GetMasterBranchVisitPurpose)
 	setupRouter.POST("/get_visit_purpose/:branch_id", setupHandler.GetMasterVisitPurpose)
 	setupRouter.POST("/get_table_section_print_category_setting/:branch_id", setupHandler.GetMasterTableSectionPrintCategorySetting)
+	setupRouter.POST("/get_master_user/:branch_id", setupHandler.GetMasterUser)
 
+	setupRouter.POST("/get_master_role_access/:branch_id", setupHandler.GetMasterRoleAccess)
+	setupRouter.POST("/get_menu_app/:branch_id", setupHandler.GetMenuApp)
+
+
+	////////////////
+
+	pushHandler := pushdata.NewHander(config.DB)
+	pushRouter := router.Group("/push")
+
+	pushRouter.POST("/data_order", pushHandler.PushDataPosOrder)
+	pushRouter.POST("/data_order_detail", pushHandler.PushDataPosOrderDetail)
+	pushRouter.POST("/data_order_detail_package", pushHandler.PushDataPosOrderDetailPackage)
+	pushRouter.POST("/data_order_payment", pushHandler.PushDataPosOrderPayment)
+	
 }

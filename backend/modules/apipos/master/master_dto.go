@@ -56,6 +56,7 @@ type TableSection struct {
 	LayoutImageSrc        string `bun:"layout_image_src" json:"layout_image_src"`
 	IsActive              bool   `bun:"is_active" json:"is_active"`
 	Type									string `bun:"type" json:"type"`
+	CanHold									bool `bun:"can_hold" json:"can_hold"`
 }
 
 
@@ -203,4 +204,30 @@ type MasterTableSectionPrintCategorySetting struct {
 	SubCategoryId  int `bun:"sub_category_id" json:"sub_category_id"`
 	StationId      int `bun:"station_id" json:"station_id"`
 	CategoryId     int `bun:"category_id" json:"category_id"`
+}
+
+type MasterUser struct {
+	ID int `bun:"id" json:"id"`
+	Username string `bun:"username" json:"username"`
+	Fullname string `bun:"fullname" json:"fullname"`
+	RoleID int `bun:"role_id" json:"role_id"`
+	Email string `bun:"email" json:"email"`
+	Sandi string `bun:"sandi" json:"sandi"`
+}
+
+type MasterRoleAccess struct {
+	ID int `bun:"id" json:"id"`
+	RoleID int `bun:"role_id" json:"role_id"`
+	MenuID int `bun:"menu_id" json:"menu_id"`
+	View bool `bun:"view" json:"view"`
+	Insert bool `bun:"insert" json:"insert"`
+	Update bool `bun:"update" json:"update"`
+	Delete bool `bun:"delete" json:"delete"`
+	Approve bool `bun:"approve" json:"approve"`
+}
+
+type MasterMenuApp struct{
+	ID int `bun:"id" json:"id"`
+	Menu string `bun:"menu" json:"menu"`
+	SubMenu string `bun:"submenu" json:"submenu"`
 }

@@ -103,7 +103,7 @@ func (this *MasterService) GetTableSection(context context.Context, branch_id in
 	data := []TableSection{}
 
 	err := this.DB.NewRaw(`SELECT
-id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type
+id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type, can_hold
 FROM master_table_section WHERE branch_id = ?`, branch_id).Scan(context, &data)
 
 	if err != nil {
@@ -437,4 +437,63 @@ func (this *MasterService) GetTableSectionPrintCategorySetting(context context.C
 		return data, err
 	}
 	return data, nil
+}
+
+func (this *MasterService) GetMasterUserList (context context.Context, branch_id int)([]MasterUser, error){
+	data :=  []MasterUser{}
+	err := this.DB.NewRaw(`
+					SELECT DISTINCT
+				mu.id,
+				mu.username,
+				mu.fullname,
+				mu.role_id,
+				mu.email,
+				mu.sandi
+
+				FROM master_users mu
+				JOIN master_users_branches mub on mu.id = mub.user_id
+
+				WHERE mub.branch_id = ? and mu.flag_pos = true
+	`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data,nil
+}
+
+func (this *MasterService) GetMasterRoleAccess (context context.Context, branch_id int)([]MasterRoleAccess, error){
+	data :=  []MasterRoleAccess{}
+	err := this.DB.NewRaw(`
+		SELECT 
+		mra.id,
+		mra.role_id,
+		mra.menu_id,
+		mra.view,
+		mra.insert,
+		mra.update,
+		mra.approve,
+		mra.delete
+		FROM master_role_access mra 
+		JOIN (SELECT DISTINCT
+		mu.role_id
+		FROM master_users mu
+		JOIN master_users_branches mub on mu.id = mub.user_id
+		WHERE mub.branch_id = ? and mu.flag_pos = true) mu on mra.role_id = mu.role_id
+	`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data,nil
+}
+
+func (this *MasterService) GetMasterMenuApp (context context.Context, branch_id int)([]MasterMenuApp, error){
+	data := []MasterMenuApp{}
+	err := this.DB.NewRaw(`
+SELECT
+id, menu, submenu
+FROM master_menu`).Scan(context, &data)
+if err != nil {
+	return data, err
+}
+return data,nil
 }

@@ -2,9 +2,12 @@ package apipos
 
 import (
 	"APIANDORDER/backend/config"
+	"APIANDORDER/backend/helpers"
 	"APIANDORDER/backend/modules/apipos/pushdata"
 	"APIANDORDER/backend/modules/apipos/setup"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,5 +69,42 @@ func Register(app *gin.Engine) {
 	pushRouter.POST("/data_order_detail", pushHandler.PushDataPosOrderDetail)
 	pushRouter.POST("/data_order_detail_package", pushHandler.PushDataPosOrderDetailPackage)
 	pushRouter.POST("/data_order_payment", pushHandler.PushDataPosOrderPayment)
-	
+
+	// ENDDAY JURNAL & REVERT
+
+	enddayRouter := router.Group("/endday")
+	enddayRouter.GET("/jurnal/:branch_id/:dayshift_ulid", func(ctx *gin.Context) {
+		resp := helpers.NewResponse()
+
+		branch_id := ctx.Param("branch_id")
+		dayshift_ulid := ctx.Param("dayshift_ulid")
+		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
+
+
+		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/bom_exec/"+branch_id+"/"+dayshift_ulid)
+		if err != nil {
+
+			log.Println(err)
+			ctx.JSON(200, resp.SetCode(100).SetMessage(err.Error()))
+			return
+		}
+			ctx.JSON(200, resp.SetCode(0).SetMessage("ok"))
+
+	});
+
+	enddayRouter.GET("/jurnal-revert/:dayshift_ulid", func(ctx *gin.Context) {
+		resp := helpers.NewResponse()
+
+		dayshift_ulid := ctx.Param("dayshift_ulid")
+		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
+
+
+		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/endrevert/"+dayshift_ulid)
+		if err != nil {
+			ctx.JSON(200, resp.SetCode(100).SetMessage(err.Error()))
+			return
+		}
+			ctx.JSON(200, resp.SetCode(0).SetMessage("ok"))
+
+	});
 }

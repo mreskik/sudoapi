@@ -81,7 +81,7 @@ func Register(app *gin.Engine) {
 		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
 
 
-		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/bom_exec/"+branch_id+"/"+dayshift_ulid)
+		_,err := http.Get(SERVER_SUDOCORE+"/pos/endday-jurnal/"+branch_id+"/"+dayshift_ulid)
 		if err != nil {
 
 			log.Println(err)
@@ -99,7 +99,7 @@ func Register(app *gin.Engine) {
 		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
 
 
-		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/endrevert/"+dayshift_ulid)
+		_,err := http.Get(SERVER_SUDOCORE+"/pos/revert-jurnal/"+dayshift_ulid)
 		if err != nil {
 			ctx.JSON(200, resp.SetCode(100).SetMessage(err.Error()))
 			return

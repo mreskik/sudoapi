@@ -4,6 +4,7 @@ import (
 	"APIANDORDER/backend"
 	"APIANDORDER/backend/config"
 	"log"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 	backend.Router(app)
-	app.Run("0.0.0.0:7001")
+	app.Run("0.0.0.0:"+os.Getenv("APP_PORT"))
 
 }

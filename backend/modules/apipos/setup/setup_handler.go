@@ -764,6 +764,336 @@ func (this *SetupHandler) GetMasterRoleAccess(c *gin.Context) {
 }
 
 
+func (this *SetupHandler) GetPromoList(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data_promo, err := this.masterService.GetMasterPromo(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data_promo))
+}
+
+func (this *SetupHandler) GetPromoBranch(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoBranches(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo branch!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoVisitPurpose(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoVisitPurposes(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo visit purpose!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoTypeMember(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoTypeMembers(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo type member!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo category!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoSubCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoSubCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo sub category!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoItem(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoItems(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo item!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoDay(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoDays(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo day!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetPromoTime(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoTimes(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo time!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetMemberTypeList(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterMemberType(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data member type!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetMemberList(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterMember(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data member!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (this *SetupHandler) GetMenuApp(c *gin.Context) {
 	res := helpers.NewResponse()
 
@@ -793,3 +1123,4 @@ func (this *SetupHandler) GetMenuApp(c *gin.Context) {
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
+

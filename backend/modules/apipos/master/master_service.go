@@ -17,7 +17,38 @@ func NewMasterService(db *bun.DB) *MasterService {
 func (this *MasterService) GetbranchList(context context.Context, user_id int) ([]Branch, error) {
 
 	branch_list := []Branch{}
-	err := this.DB.NewRaw(`SELECT mb.id, mb.name FROM master_users_branches mub JOIN master_branch mb ON mb.id = mub.branch_id WHERE mub.user_id = ?`, user_id).Scan(context, &branch_list)
+	err := this.DB.NewRaw(`SELECT
+	mabdb.branch_id as id,
+	concat(mad.code,' - ', mb.name)as name
+FROM
+	master_user_access_detail_branch mabdb
+	JOIN (
+	SELECT
+		muad.id,
+		muad.user_id,
+		muad.company_id,
+		muad.flag_all_branch,
+		mc.code 
+	FROM
+		master_user_access_detail muad
+		JOIN master_company mc ON mc.ID = muad.company_id 
+	WHERE
+	muad.user_id = ? 
+	AND muad.flag_all_branch = false
+	) mad ON mad.id = mabdb.access_detail_id 
+	JOIN master_branch mb on mb.id = mabdb.branch_id
+	
+	UNION
+	
+	SELECT 
+	mb.id,
+	concat(mc.code, ' - ', mb.name) as name
+	FROM master_branch mb
+	JOIN master_company mc on mc.id = mb.company_id
+	JOIN master_user_access_detail muad on muad.company_id = mb.company_id
+	WHERE muad.user_id = ? AND muad.flag_all_branch = true AND mb.status = '1'
+
+	`, user_id, user_id).Scan(context, &branch_list)
 	if err != nil {
 		return branch_list, err
 	}
@@ -39,7 +70,10 @@ mb.address as address,
 mb.telp as phone,
 mb.printing_header,
 mb.printing_footer,
-mb.company_id
+mb.company_id,
+mb.token,
+COALESCE(mb.logo_header_src, '') as logo_header_src,
+COALESCE(mb.image_footer_src, '') as image_footer_src
 
 FROM master_branch mb 
 JOIN master_brand mbd on mbd.id = mb.brand_id
@@ -442,19 +476,33 @@ func (this *MasterService) GetTableSectionPrintCategorySetting(context context.C
 func (this *MasterService) GetMasterUserList (context context.Context, branch_id int)([]MasterUser, error){
 	data :=  []MasterUser{}
 	err := this.DB.NewRaw(`
-					SELECT DISTINCT
-				mu.id,
-				mu.username,
-				mu.fullname,
-				mu.role_id,
-				mu.email,
-				mu.sandi
+SELECT DISTINCT
+a.user_id as id,
+c.username,
+c.fullname,
+c.role_id,
+c.email,
+c.sandi
+FROM master_user_access_detail a
+JOIN master_users c on c.id = a.user_id
+JOIN master_user_access_detail_branch b on b.access_detail_id = a.id
 
-				FROM master_users mu
-				JOIN master_users_branches mub on mu.id = mub.user_id
+WHERE a.flag_all_branch = false and b.branch_id = ? and c.flag_pos = true
 
-				WHERE mub.branch_id = ? and mu.flag_pos = true
-	`, branch_id).Scan(context, &data)
+UNION
+
+SELECT DISTINCT
+a.user_id as id,
+c.username,
+c.fullname,
+c.role_id,
+c.email,
+c.sandi
+FROM master_user_access_detail a
+JOIN master_users c on c.id = a.user_id
+JOIN master_branch b on b.id = ?
+WHERE a.flag_all_branch = TRUE and c.flag_pos = TRUE AND a.company_id = b.company_id
+	`, branch_id, branch_id).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -484,6 +532,225 @@ func (this *MasterService) GetMasterRoleAccess (context context.Context, branch_
 		return data, err
 	}
 	return data,nil
+}
+
+func (this *MasterService) GetMasterPromo(context context.Context, branch_id int) ([]MasterPromo, error) {
+	data := []MasterPromo{}
+	err := this.DB.NewRaw(`
+SELECT
+mp.id,
+mp.name,
+mp.code,
+mp.type,
+mp.type_rupiah_amount,
+mp.type_percent_use_limit,
+mp.type_percent_rate,
+mp.type_percent_limit_amount,
+mp.type_freeitem_item_id,
+mp.min_buy_amount,
+mp.min_point_amount,
+mp.flag_include_package,
+mp.promo_for,
+mp.apply_limit_per_day,
+mp.apply_limit_per_item,
+mp.period_start,
+mp.period_end,
+mp.flag_all_branches,
+mp.flag_all_visit_purposes,
+mp.flag_all_type_members,
+mp.flag_all_days,
+mp.flag_all_times,
+mp.is_active,
+mp.created_at,
+mp.created_by,
+mp.updated_at,
+mp.updated_by
+
+FROM master_promo mp
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoBranches(context context.Context, branch_id int) ([]MasterPromoBranches, error) {
+	data := []MasterPromoBranches{}
+	err := this.DB.NewRaw(`SELECT
+mpb.id,
+mpb.promo_id,
+mpb.branch_id
+FROM master_promo_branches mpb
+JOIN master_promo mp on mp.id = mpb.promo_id
+WHERE mpb.branch_id = ? and mp.is_active = true`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoVisitPurposes(context context.Context, branch_id int) ([]MasterPromoVisitPurposes, error) {
+	data := []MasterPromoVisitPurposes{}
+	err := this.DB.NewRaw(`SELECT
+mpvp.id,
+mpvp.promo_id,
+mpvp.visit_purpose_id
+FROM master_promo_visit_purposes mpvp
+JOIN master_promo mp on mp.id = mpvp.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoTypeMembers(context context.Context, branch_id int) ([]MasterPromoTypeMembers, error) {
+	data := []MasterPromoTypeMembers{}
+	err := this.DB.NewRaw(`SELECT
+mptm.id,
+mptm.promo_id,
+mptm.type_member_id
+FROM master_promo_type_members mptm
+JOIN master_promo mp on mp.id = mptm.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoCategories(context context.Context, branch_id int) ([]MasterPromoCategories, error) {
+	data := []MasterPromoCategories{}
+	err := this.DB.NewRaw(`SELECT
+mpc.id,
+mpc.promo_id,
+mpc.category_id
+FROM master_promo_categories mpc
+JOIN master_promo mp on mp.id = mpc.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoSubCategories(context context.Context, branch_id int) ([]MasterPromoSubCategories, error) {
+	data := []MasterPromoSubCategories{}
+	err := this.DB.NewRaw(`SELECT
+mpsc.id,
+mpsc.promo_id,
+mpsc.sub_category_id
+FROM master_promo_sub_categories mpsc
+JOIN master_promo mp on mp.id = mpsc.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoItems(context context.Context, branch_id int) ([]MasterPromoItems, error) {
+	data := []MasterPromoItems{}
+	err := this.DB.NewRaw(`SELECT
+mpi.id,
+mpi.promo_id,
+mpi.item_id
+FROM master_promo_items mpi
+JOIN master_promo mp on mp.id = mpi.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoDays(context context.Context, branch_id int) ([]MasterPromoDays, error) {
+	data := []MasterPromoDays{}
+	err := this.DB.NewRaw(`SELECT
+mpd.id,
+mpd.promo_id,
+mpd.day
+FROM master_promo_days mpd
+JOIN master_promo mp on mp.id = mpd.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoTimes(context context.Context, branch_id int) ([]MasterPromoTimes, error) {
+	data := []MasterPromoTimes{}
+	err := this.DB.NewRaw(`SELECT
+mpt.id,
+mpt.promo_id,
+mpt.time_start,
+mpt.time_end
+FROM master_promo_times mpt
+JOIN master_promo mp on mp.id = mpt.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterMemberType(context context.Context, branch_id int) ([]MasterMemberType, error) {
+	data := []MasterMemberType{}
+	err := this.DB.NewRaw(`SELECT
+id,
+name,
+is_active,
+created_at,
+created_by
+FROM master_member_type
+WHERE is_active = true`).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterMember(context context.Context, branch_id int) ([]MasterMember, error) {
+	data := []MasterMember{}
+	err := this.DB.NewRaw(`SELECT
+id,
+member_type_id,
+code,
+name,
+contact_name,
+email,
+phone_number,
+is_active,
+created_at,
+created_by,
+updated_at,
+updated_by
+FROM master_member
+WHERE is_active = true`).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
 }
 
 func (this *MasterService) GetMasterMenuApp (context context.Context, branch_id int)([]MasterMenuApp, error){

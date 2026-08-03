@@ -111,8 +111,6 @@ func (this *PushDataHandler) PushDataPosOrderPayment(c *gin.Context){
 		c.JSON(200, res.SetMessage(err.Error()))
 		return
 	}
-
 	
 	c.JSON(200, res.SetMessage("success push data!").SetCode(0))
-	
 }

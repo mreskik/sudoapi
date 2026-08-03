@@ -117,7 +117,8 @@ type PosOrderDetailModel struct {
 	TaxRate  string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
 	TaxValue string `bun:"tax_value,type:numeric(20,2)" json:"tax_value"`
 
-	PromoID *int64 `bun:"promo_id" json:"promo_id"`
+	PromoID          *int64 `bun:"promo_id" json:"promo_id"`
+	IsFreeItemPromo  bool   `bun:"is_free_item_promo" json:"is_free_item_promo"`
 
 	DiscountRate  string `bun:"discount_rate,type:numeric(20,2)" json:"discount_rate"`
 	DiscountValue string `bun:"discount_value,type:numeric(20,2)" json:"discount_value"`

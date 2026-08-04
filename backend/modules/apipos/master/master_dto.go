@@ -51,19 +51,19 @@ type Station struct {
 }
 
 type TableSection struct {
-	ID                    int    `bun:"id,pk,autoincrement" json:"id"`
-	BranchID              int    `bun:"branch_id" json:"branch_id"`
-	Name                  string `bun:"name" json:"name"`
-	TableCheckerStationId int    `bun:"table_checker_station_id" json:"tablechecker_station_id"`
-	MainCheckerStationId  int    `bun:"main_checker_station_id" json:"mainchecker_station_id"`
-	LayoutWidth           int    `bun:"layout_width" json:"layout_width"`
-	LayoutHeight          int    `bun:"layout_height" json:"layout_height"`
-	LayoutImageSrc        string `bun:"layout_image_src" json:"layout_image_src"`
-	IsActive              bool   `bun:"is_active" json:"is_active"`
-	Type									string `bun:"type" json:"type"`
-	CanHold									bool `bun:"can_hold" json:"can_hold"`
+	ID                       int    `bun:"id,pk,autoincrement" json:"id"`
+	BranchID                 int    `bun:"branch_id" json:"branch_id"`
+	Name                     string `bun:"name" json:"name"`
+	TableCheckerStationId    int    `bun:"table_checker_station_id" json:"tablechecker_station_id"`
+	MainCheckerStationId     int    `bun:"main_checker_station_id" json:"mainchecker_station_id"`
+	LayoutWidth              int    `bun:"layout_width" json:"layout_width"`
+	LayoutHeight             int    `bun:"layout_height" json:"layout_height"`
+	LayoutImageSrc           string `bun:"layout_image_src" json:"layout_image_src"`
+	IsActive                 bool   `bun:"is_active" json:"is_active"`
+	Type                     string `bun:"type" json:"type"`
+	CanHold                  bool   `bun:"can_hold" json:"can_hold"`
+	PrintCategorySettingLink *int64 `bun:"print_category_setting_link" json:"print_category_setting_link"`
 }
-
 
 type TableSectionTable struct {
 	ID               int    `bun:"id,pk,autoincrement" json:"id"`
@@ -212,28 +212,28 @@ type MasterTableSectionPrintCategorySetting struct {
 }
 
 type MasterUser struct {
-	ID int `bun:"id" json:"id"`
+	ID       int    `bun:"id" json:"id"`
 	Username string `bun:"username" json:"username"`
 	Fullname string `bun:"fullname" json:"fullname"`
-	RoleID int `bun:"role_id" json:"role_id"`
-	Email string `bun:"email" json:"email"`
-	Sandi string `bun:"sandi" json:"sandi"`
+	RoleID   int    `bun:"role_id" json:"role_id"`
+	Email    string `bun:"email" json:"email"`
+	Sandi    string `bun:"sandi" json:"sandi"`
 }
 
 type MasterRoleAccess struct {
-	ID int `bun:"id" json:"id"`
-	RoleID int `bun:"role_id" json:"role_id"`
-	MenuID int `bun:"menu_id" json:"menu_id"`
-	View bool `bun:"view" json:"view"`
-	Insert bool `bun:"insert" json:"insert"`
-	Update bool `bun:"update" json:"update"`
-	Delete bool `bun:"delete" json:"delete"`
+	ID      int  `bun:"id" json:"id"`
+	RoleID  int  `bun:"role_id" json:"role_id"`
+	MenuID  int  `bun:"menu_id" json:"menu_id"`
+	View    bool `bun:"view" json:"view"`
+	Insert  bool `bun:"insert" json:"insert"`
+	Update  bool `bun:"update" json:"update"`
+	Delete  bool `bun:"delete" json:"delete"`
 	Approve bool `bun:"approve" json:"approve"`
 }
 
-type MasterMenuApp struct{
-	ID int `bun:"id" json:"id"`
-	Menu string `bun:"menu" json:"menu"`
+type MasterMenuApp struct {
+	ID      int    `bun:"id" json:"id"`
+	Menu    string `bun:"menu" json:"menu"`
 	SubMenu string `bun:"submenu" json:"submenu"`
 }
 
@@ -361,4 +361,3 @@ type MasterMember struct {
 	UpdatedAt    *time.Time `bun:"updated_at" json:"updated_at,omitempty"`
 	UpdatedBy    *int       `bun:"updated_by" json:"updated_by,omitempty"`
 }
-

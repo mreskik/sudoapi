@@ -137,7 +137,7 @@ func (this *MasterService) GetTableSection(context context.Context, branch_id in
 	data := []TableSection{}
 
 	err := this.DB.NewRaw(`SELECT
-id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type, can_hold
+id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type, can_hold, print_category_setting_link
 FROM master_table_section WHERE branch_id = ?`, branch_id).Scan(context, &data)
 
 	if err != nil {
@@ -456,25 +456,53 @@ WHERE mb.id = ? and vp.is_active = true`, branch_id).Scan(context, &data)
 }
 
 func (this *MasterService) GetTableSectionPrintCategorySetting(context context.Context, branch_id int) ([]MasterTableSectionPrintCategorySetting, error) {
-	data := []MasterTableSectionPrintCategorySetting{}
-	err := this.DB.NewRaw(`
+
+	data_table_section, err := this.GetTableSection(context, branch_id)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []MasterTableSectionPrintCategorySetting{}
+
+	for _, table_section := range data_table_section {
+		temp := []MasterTableSectionPrintCategorySetting{}
+
+		// Jika print_category_setting_link null atau 0, ambil milik table section sendiri
+		// Jika ada link, ambil milik table section yang dilink
+		var target_table_section_id int
+		if table_section.PrintCategorySettingLink == nil || *table_section.PrintCategorySettingLink == 0 {
+			target_table_section_id = table_section.ID
+		} else {
+			target_table_section_id = int(*table_section.PrintCategorySettingLink)
+		}
+
+		err = this.DB.NewRaw(`
 	SELECT
-		mtsp.* 
+		mtsp.*
 	FROM
 		master_table_section_print_category_setting mtsp
-		JOIN master_table_section mts ON mts.ID = mtsp.table_section_id 
 	WHERE
-		mts.branch_id = ?
-	`, branch_id).Scan(context, &data)
+		mtsp.table_section_id = ?
+	`, target_table_section_id).Scan(context, &temp)
 
-	if err != nil {
-		return data, err
+		if err != nil {
+			return result, err
+		}
+
+		// Override table_section_id ke ID asli table section ini,
+		// supaya consumer tahu setting ini milik table section yang mana
+		for i := range temp {
+			temp[i].TableSectionId = table_section.ID
+		}
+
+		result = append(result, temp...)
 	}
-	return data, nil
+
+	return result, nil
 }
 
-func (this *MasterService) GetMasterUserList (context context.Context, branch_id int)([]MasterUser, error){
-	data :=  []MasterUser{}
+func (this *MasterService) GetMasterUserList(context context.Context, branch_id int) ([]MasterUser, error) {
+	data := []MasterUser{}
 	err := this.DB.NewRaw(`
 SELECT DISTINCT
 a.user_id as id,
@@ -506,11 +534,11 @@ WHERE a.flag_all_branch = TRUE and c.flag_pos = TRUE AND a.company_id = b.compan
 	if err != nil {
 		return data, err
 	}
-	return data,nil
+	return data, nil
 }
 
-func (this *MasterService) GetMasterRoleAccess (context context.Context, branch_id int)([]MasterRoleAccess, error){
-	data :=  []MasterRoleAccess{}
+func (this *MasterService) GetMasterRoleAccess(context context.Context, branch_id int) ([]MasterRoleAccess, error) {
+	data := []MasterRoleAccess{}
 	err := this.DB.NewRaw(`
 		SELECT 
 		mra.id,
@@ -531,7 +559,7 @@ func (this *MasterService) GetMasterRoleAccess (context context.Context, branch_
 	if err != nil {
 		return data, err
 	}
-	return data,nil
+	return data, nil
 }
 
 func (this *MasterService) GetMasterPromo(context context.Context, branch_id int) ([]MasterPromo, error) {
@@ -753,14 +781,14 @@ WHERE is_active = true`).Scan(context, &data)
 	return data, nil
 }
 
-func (this *MasterService) GetMasterMenuApp (context context.Context, branch_id int)([]MasterMenuApp, error){
+func (this *MasterService) GetMasterMenuApp(context context.Context, branch_id int) ([]MasterMenuApp, error) {
 	data := []MasterMenuApp{}
 	err := this.DB.NewRaw(`
 SELECT
 id, menu, submenu
 FROM master_menu`).Scan(context, &data)
-if err != nil {
-	return data, err
-}
-return data,nil
+	if err != nil {
+		return data, err
+	}
+	return data, nil
 }

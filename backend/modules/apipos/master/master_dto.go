@@ -86,13 +86,15 @@ type MasterTax struct {
 }
 
 type MasterTerminal struct {
-	ID        int    `bun:"id" json:"id"`
-	Name      string `bun:"name" json:"name"`
-	BranchID  int    `bun:"branch_id" json:"branch_id"`
-	DeviceID  string `bun:"device_id" json:"device_id"`
-	POSTypeID int    `bun:"pos_type_id" json:"pos_type_id"`
-	IsActive  bool   `bun:"is_active" json:"is_active"`
-	IsUsed    bool   `bun:"is_used" json:"is_used"`
+	ID               int    `bun:"id" json:"id"`
+	Name             string `bun:"name" json:"name"`
+	BranchID         int    `bun:"branch_id" json:"branch_id"`
+	DeviceID         string `bun:"device_id" json:"device_id"`
+	POSTypeID        int    `bun:"pos_type_id" json:"pos_type_id"`
+	IsActive         bool   `bun:"is_active" json:"is_active"`
+	IsUsed           bool   `bun:"is_used" json:"is_used"`
+	TableSectionID   *int64 `bun:"table_section_id" json:"table_section_id"`
+	ReceiptStationID *int64 `bun:"receipt_station_id" json:"receipt_station_id"`
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -196,6 +198,7 @@ type MasterBranchVisitPurpose struct {
 	PB1            int    `bun:"pb1" json:"pb1"`
 	OrderFee       string `bun:"order_fee" json:"order_fee"`
 	PriceListID    int    `bun:"pricelist_id" json:"pricelist_id"`
+	FlagKiosk      bool   `bun:"flag_kiosk" json:"flag_kiosk"`
 }
 
 type MasterVisitPurpose struct {

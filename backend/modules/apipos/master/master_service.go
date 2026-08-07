@@ -195,7 +195,9 @@ branch_id,
 device_id,
 pos_type_id,
 is_active,
-is_used
+is_used,
+table_section_id,
+receipt_station_id
 
 from master_terminal_id
 WHERE branch_id = ?`, branch_id).Scan(context, &data)
@@ -430,7 +432,8 @@ service_charge,
 vat,
 pb1,
 order_fee,
-menu_template_id as pricelist_id
+menu_template_id as pricelist_id,
+flag_kiosk
 FROM master_branch_visit_purpose
 WHERE branch_id = ? and is_active = true`, branch_id).Scan(context, &data)
 

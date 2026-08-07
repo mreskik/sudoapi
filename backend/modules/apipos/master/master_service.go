@@ -137,7 +137,7 @@ func (this *MasterService) GetTableSection(context context.Context, branch_id in
 	data := []TableSection{}
 
 	err := this.DB.NewRaw(`SELECT
-id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type, can_hold, print_category_setting_link
+id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_image_src,is_active, type, can_hold
 FROM master_table_section WHERE branch_id = ?`, branch_id).Scan(context, &data)
 
 	if err != nil {

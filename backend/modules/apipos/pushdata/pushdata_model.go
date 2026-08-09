@@ -54,6 +54,8 @@ type PosOrderModel struct {
 	TotalTax      string `bun:"total_tax,type:numeric(20,2)" json:"total_tax"`
 	TotalBilling  string `bun:"total_billing,type:numeric(20,2)" json:"total_billing"`
 
+	FlagInclusiveTax *bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
+
 	CancelNotes *string    `bun:"cancel_notes" json:"cancel_notes"`
 	CancelAt    *time.Time `bun:"cancel_at" json:"cancel_at"`
 	CancelBy    *int32     `bun:"cancel_by" json:"cancel_by"`

@@ -10,16 +10,15 @@ import (
 type PosOrderModel struct {
 	bun.BaseModel `bun:"table:pos_order"`
 
-	OrderNumber   string `bun:"order_number,pk" json:"order_number"`
+	OrderNumber   string  `bun:"order_number,pk" json:"order_number"`
 	PaymentNumber *string `bun:"payment_number" json:"payment_number"`
 
 	BranchID   int64 `bun:"branch_id" json:"branch_id"`
 	TerminalID int32 `bun:"terminal_id" json:"terminal_id"`
 
-	OrderName string `bun:"order_name" json:"order_name"`
-	OrderType string `bun:"order_type" json:"order_type"`
+	OrderName   string `bun:"order_name" json:"order_name"`
+	OrderType   string `bun:"order_type" json:"order_type"`
 	OrderSource string `bun:"order_source" json:"order_source"`
-	
 
 	TableSectionID *int32 `bun:"table_section_id" json:"table_section_id"`
 	TableID        *int32 `bun:"table_id" json:"table_id"`
@@ -87,8 +86,8 @@ type PosOrderModel struct {
 
 	DayshiftULID *string `bun:"dayshift_ulid" json:"dayshift_ulid"`
 
-	EndDayAt *time.Time `bun:"endday_at"`
-	CompanyId *int `bun:"company_id"`
+	EndDayAt  *time.Time `bun:"endday_at"`
+	CompanyId *int       `bun:"company_id"`
 }
 
 type PosOrderDetailModel struct {
@@ -109,7 +108,6 @@ type PosOrderDetailModel struct {
 	FlagInclusiveTax bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
 	BasePrice string `bun:"base_price,type:numeric(20,2)" json:"base_price"`
-	MenuPrice string `bun:"menu_price,type:numeric(20,2)" json:"menu_price"`
 
 	TaxID   *int64  `bun:"tax_id" json:"tax_id"`
 	TaxType *string `bun:"tax_type" json:"tax_type"`
@@ -117,11 +115,13 @@ type PosOrderDetailModel struct {
 	TaxRate  string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
 	TaxValue string `bun:"tax_value,type:numeric(20,2)" json:"tax_value"`
 
-	PromoID          *int64 `bun:"promo_id" json:"promo_id"`
-	IsFreeItemPromo  bool   `bun:"is_free_item_promo" json:"is_free_item_promo"`
+	PromoID         *int64 `bun:"promo_id" json:"promo_id"`
+	IsFreeItemPromo bool   `bun:"is_free_item_promo" json:"is_free_item_promo"`
 
 	DiscountRate  string `bun:"discount_rate,type:numeric(20,2)" json:"discount_rate"`
 	DiscountValue string `bun:"discount_value,type:numeric(20,2)" json:"discount_value"`
+	AfterDiscount string `bun:"after_discount,type:numeric(20,2)" json:"after_discount"`
+	Dpp           string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 
@@ -164,7 +164,6 @@ type PosOrderDetailPackageModel struct {
 	FlagInclusiveTax bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
 	BasePrice string `bun:"base_price,type:numeric(20,2)" json:"base_price"`
-	MenuPrice string `bun:"menu_price,type:numeric(20,2)" json:"menu_price"`
 
 	TaxID   *int64  `bun:"tax_id" json:"tax_id"`
 	TaxType *string `bun:"tax_type" json:"tax_type"`
@@ -176,6 +175,8 @@ type PosOrderDetailPackageModel struct {
 
 	DiscountRate  string `bun:"discount_rate,type:numeric(20,2)" json:"discount_rate"`
 	DiscountValue string `bun:"discount_value,type:numeric(20,2)" json:"discount_value"`
+	AfterDiscount string `bun:"after_discount,type:numeric(20,2)" json:"after_discount"`
+	Dpp           string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 
@@ -200,7 +201,7 @@ type PosOrderPaymentModel struct {
 	CardNumber *string `bun:"card_number" json:"card_number"`
 	BankName   *string `bun:"bank_name" json:"bank_name"`
 
-	AccountName     *string `bun:"account_name" json:"account_name"`
+	AccountName      *string `bun:"account_name" json:"account_name"`
 	VerificationCode *string `bun:"verification_code" json:"verification_code"`
 
 	CreatedAt *time.Time `bun:"created_at" json:"created_at"`
@@ -212,8 +213,7 @@ type PosOrderPaymentModel struct {
 	SyncAt *time.Time `bun:"sync_at" json:"sync_at"`
 }
 
-
-//dayshift
+// dayshift
 type PosDayShiftModel struct {
 	bun.BaseModel `bun:"table:pos_dayshift"`
 
@@ -221,15 +221,15 @@ type PosDayShiftModel struct {
 
 	BranchID int64 `bun:"branch_id" json:"branch_id"`
 
-	DayinTime *time.Time `bun:"dayin_time" json:"dayin_time"`
-	DayinTotal string   `bun:"dayin_total,type:numeric(20,2)" json:"dayin_total"`
-	DayinUserID *int64   `bun:"dayin_user_id" json:"dayin_user_id"`
+	DayinTime   *time.Time `bun:"dayin_time" json:"dayin_time"`
+	DayinTotal  string     `bun:"dayin_total,type:numeric(20,2)" json:"dayin_total"`
+	DayinUserID *int64     `bun:"dayin_user_id" json:"dayin_user_id"`
 
 	SystemCashReceived *string `bun:"system_cash_received,type:numeric(20,2)" json:"system_cash_received"`
 
-	DayoutTime *time.Time `bun:"dayout_time" json:"dayout_time"`
-	DayoutTotal *string  `bun:"dayout_total,type:numeric(20,2)" json:"dayout_total"`
-	DayoutUserID *int64   `bun:"dayout_user_id" json:"dayout_user_id"`
+	DayoutTime   *time.Time `bun:"dayout_time" json:"dayout_time"`
+	DayoutTotal  *string    `bun:"dayout_total,type:numeric(20,2)" json:"dayout_total"`
+	DayoutUserID *int64     `bun:"dayout_user_id" json:"dayout_user_id"`
 
 	DayoutNotes *string `bun:"dayout_notes" json:"dayout_notes"`
 
@@ -239,9 +239,9 @@ type PosDayShiftModel struct {
 type PosDayShiftDetailModel struct {
 	bun.BaseModel `bun:"table:pos_dayshift_detail"`
 
-	ULID string `bun:"ulid,pk" json:"ulid"`
-	DayShiftULID int64 `bun:"dayshift_ulid" json:"dayshift_ulid"`
-	ShiftTime time.Time `bun:"shift_time" json:"shift_time"`
-	ShiftUserID int64 `bun:"shift_user_id" json:"shift_user_id"`
-	SyncAt *time.Time `bun:"sync_at" json:"sync_at"`
+	ULID         string     `bun:"ulid,pk" json:"ulid"`
+	DayShiftULID int64      `bun:"dayshift_ulid" json:"dayshift_ulid"`
+	ShiftTime    time.Time  `bun:"shift_time" json:"shift_time"`
+	ShiftUserID  int64      `bun:"shift_user_id" json:"shift_user_id"`
+	SyncAt       *time.Time `bun:"sync_at" json:"sync_at"`
 }

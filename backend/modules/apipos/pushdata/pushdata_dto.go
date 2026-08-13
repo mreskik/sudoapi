@@ -15,3 +15,11 @@ type PosOrderDetailPackageDTO struct {
 type PosOrderPaymentDTO struct {
 	ListOrderPayment []PosOrderPaymentModel `json:"list_order_payment"`
 }
+
+type PosDayShiftDTO struct {
+	ListDayShift []PosDayShiftModel `json:"list_dayshift"`
+}
+
+type PosDayShiftDetailDTO struct {
+	ListDayShiftDetail []PosDayShiftDetailModel `json:"list_dayshift_detail"`
+}

@@ -124,7 +124,8 @@ func (this *MasterService) GetMasterSubCategory(context context.Context, branch_
 	data := []SubCategoryDTO{}
 	err := this.DB.NewRaw(`SELECT
 msc.id,
-msc.name
+msc.name,
+COALESCE(msc.icon_src, '') as icon_src
 from master_item_sub_category msc
 JOIN master_branch mb on msc.company_id = mb.company_id AND mb.id = ?`, branch_id).Scan(context, &data)
 	if err != nil {
@@ -197,7 +198,8 @@ pos_type_id,
 is_active,
 is_used,
 table_section_id,
-receipt_station_id
+receipt_station_id,
+flag_printer_frontend
 
 from master_terminal_id
 WHERE branch_id = ?`, branch_id).Scan(context, &data)
@@ -223,6 +225,7 @@ mi.item_subcategory as subcategory_id,
 mi.item_bom as bom_id,
 mi.item_color as menu_color,
 mi.image,
+COALESCE(mi.icon_src, '') as icon_src,
 mi.use_tax as tax_type
 
 FROM master_item mi
@@ -366,11 +369,12 @@ mpm.color_theme,
 mpm.use_authorization,
 mpm.fixed_amount,
 mpm.verification_code_mandatory,
-mpm.card_number_code_mandatory
+mpm.card_number_code_mandatory,
+mpm.payment_gateway_code
 
 FROM  master_payment_method mpm
-JOIN  master_payment_method_branches mpmd on mpmd.payment_method_id = mpm.id
-WHERE mpmd.branch_id = ? and mpm.is_active = true`, branch_id).Scan(context, &data)
+LEFT JOIN  master_payment_method_branches mpmd on mpmd.payment_method_id = mpm.id and mpmd.branch_id = ?
+WHERE mpm.is_active = true and (mpm.flag_all_branch = true or mpmd.id is not null)`, branch_id).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -437,6 +441,69 @@ flag_kiosk
 FROM master_branch_visit_purpose
 WHERE branch_id = ? and is_active = true`, branch_id).Scan(context, &data)
 
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterBranchOpsSetting(context context.Context, branch_id int) ([]MasterBranchOpsSetting, error) {
+	data := []MasterBranchOpsSetting{}
+	err := this.DB.NewRaw(`SELECT id, day, status, open_time, closed_time
+	FROM master_branch_ops_setting
+	WHERE branch_id = ?`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+// GetMasterImage, GetMasterImageList, GetMasterImageListApplyFor -- 3 endpoint flat terpisah
+// buat data nested master_image (header -> image_list -> apply_for), ngikutin pola
+// master_item_package/_group/_detail (join berjenjang sampai ke master_image, filter branch
+// relevan di tiap level). Sama kayak master_promo: flag_all_branches -- kalau true, image ini
+// berlaku lintas SEMUA branch/company (bukan cuma company branch itu sendiri), gak ada
+// company_id di master_image.
+func (this *MasterService) GetMasterImage(context context.Context, branch_id int) ([]MasterImage, error) {
+	data := []MasterImage{}
+	err := this.DB.NewRaw(`
+	SELECT mi.id, mi.name, mi.is_active
+	FROM master_image mi
+	LEFT JOIN master_image_branches mib ON mib.master_image_id = mi.id AND mib.branch_id = ?
+	WHERE mi.is_active = true AND (mi.flag_all_branches = true OR mib.id IS NOT NULL)
+	`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterImageList(context context.Context, branch_id int) ([]MasterImageList, error) {
+	data := []MasterImageList{}
+	err := this.DB.NewRaw(`
+	SELECT mil.id, mil.master_image_id, mil.image_src, mil.sequence
+	FROM master_image_list mil
+	JOIN master_image mi ON mi.id = mil.master_image_id
+	LEFT JOIN master_image_branches mib ON mib.master_image_id = mi.id AND mib.branch_id = ?
+	WHERE mi.is_active = true AND (mi.flag_all_branches = true OR mib.id IS NOT NULL)
+	`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterImageListApplyFor(context context.Context, branch_id int) ([]MasterImageListApplyFor, error) {
+	data := []MasterImageListApplyFor{}
+	err := this.DB.NewRaw(`
+	SELECT milaf.id, milaf.master_image_list_id, milaf.apply_for
+	FROM master_image_list_apply_for milaf
+	JOIN master_image_list mil ON mil.id = milaf.master_image_list_id
+	JOIN master_image mi ON mi.id = mil.master_image_id
+	LEFT JOIN master_image_branches mib ON mib.master_image_id = mi.id AND mib.branch_id = ?
+	WHERE mi.is_active = true AND (mi.flag_all_branches = true OR mib.id IS NOT NULL)
+	`, branch_id).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}

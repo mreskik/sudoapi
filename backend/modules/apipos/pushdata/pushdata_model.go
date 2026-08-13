@@ -42,6 +42,9 @@ type PosOrderModel struct {
 	WaiterName string `bun:"waiter_name" json:"waiter_name"`
 	SenderName string `bun:"sender_name" json:"sender_name"`
 
+	CustomerPhoneNumber *string `bun:"customer_phone_number" json:"customer_phone_number"`
+	ChasierName         *string `bun:"chasier_name" json:"chasier_name"`
+
 	DeliveryCost  string `bun:"delivery_cost,type:numeric(20,2)" json:"delivery_cost"`
 	OrderFee      string `bun:"order_fee,type:numeric(20,2)" json:"order_fee"`
 	ServiceCharge string `bun:"service_charge,type:numeric(20,2)" json:"service_charge"`
@@ -242,8 +245,9 @@ type PosDayShiftDetailModel struct {
 	bun.BaseModel `bun:"table:pos_dayshift_detail"`
 
 	ULID         string     `bun:"ulid,pk" json:"ulid"`
-	DayShiftULID int64      `bun:"dayshift_ulid" json:"dayshift_ulid"`
+	DayShiftULID string     `bun:"dayshift_ulid" json:"dayshift_ulid"`
 	ShiftTime    time.Time  `bun:"shift_time" json:"shift_time"`
+	ShiftNumber  int64      `bun:"shift_number" json:"shift_number"`
 	ShiftUserID  int64      `bun:"shift_user_id" json:"shift_user_id"`
 	SyncAt       *time.Time `bun:"sync_at" json:"sync_at"`
 }

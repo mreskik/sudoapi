@@ -2,14 +2,13 @@ package apipos
 
 import (
 	"APIANDORDER/backend/config"
-	"APIANDORDER/backend/helpers"
 	"APIANDORDER/backend/middleware"
+	"APIANDORDER/backend/modules/apipos/endday"
+	"APIANDORDER/backend/modules/apipos/member"
 	"APIANDORDER/backend/modules/apipos/pushdata"
 	"APIANDORDER/backend/modules/apipos/setup"
 	"APIANDORDER/backend/modules/apipos/sync"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,6 +53,10 @@ func Register(app *gin.Engine) {
 	setupRouter.POST("/get_payment_method_type/:branch_id", setupHandler.GetMasterPaymentMethodType)
 	setupRouter.POST("/get_payment_method_visit_purpose/:branch_id", setupHandler.GetMasterPaymentMethodVisitPurposes)
 	setupRouter.POST("/get_branch_visit_purpose/:branch_id", setupHandler.GetMasterBranchVisitPurpose)
+	setupRouter.POST("/get_branch_ops_setting/:branch_id", setupHandler.GetMasterBranchOpsSetting)
+	setupRouter.POST("/get_master_image/:branch_id", setupHandler.GetMasterImage)
+	setupRouter.POST("/get_master_image_list/:branch_id", setupHandler.GetMasterImageList)
+	setupRouter.POST("/get_master_image_list_apply_for/:branch_id", setupHandler.GetMasterImageListApplyFor)
 	setupRouter.POST("/get_visit_purpose/:branch_id", setupHandler.GetMasterVisitPurpose)
 	setupRouter.POST("/get_table_section_print_category_setting/:branch_id", setupHandler.GetMasterTableSectionPrintCategorySetting)
 	setupRouter.POST("/get_master_user/:branch_id", setupHandler.GetMasterUser)
@@ -103,6 +106,10 @@ func Register(app *gin.Engine) {
 	syncRouter.GET("/get_payment_method_type/:branch_id", syncHandler.GetMasterPaymentMethodType)
 	syncRouter.GET("/get_payment_method_visit_purpose/:branch_id", syncHandler.GetMasterPaymentMethodVisitPurposes)
 	syncRouter.GET("/get_branch_visit_purpose/:branch_id", syncHandler.GetMasterBranchVisitPurpose)
+	syncRouter.GET("/get_branch_ops_setting/:branch_id", syncHandler.GetMasterBranchOpsSetting)
+	syncRouter.GET("/get_master_image/:branch_id", syncHandler.GetMasterImage)
+	syncRouter.GET("/get_master_image_list/:branch_id", syncHandler.GetMasterImageList)
+	syncRouter.GET("/get_master_image_list_apply_for/:branch_id", syncHandler.GetMasterImageListApplyFor)
 	syncRouter.GET("/get_visit_purpose/:branch_id", syncHandler.GetMasterVisitPurpose)
 	syncRouter.GET("/get_table_section_print_category_setting/:branch_id", syncHandler.GetMasterTableSectionPrintCategorySetting)
 	syncRouter.GET("/get_master_user/:branch_id", syncHandler.GetMasterUser)
@@ -132,42 +139,18 @@ func Register(app *gin.Engine) {
 	pushRouter.POST("/data_order_detail", pushHandler.PushDataPosOrderDetail)
 	pushRouter.POST("/data_order_detail_package", pushHandler.PushDataPosOrderDetailPackage)
 	pushRouter.POST("/data_order_payment", pushHandler.PushDataPosOrderPayment)
+	pushRouter.POST("/data_dayshift", pushHandler.PushDataPosDayShift)
+	pushRouter.POST("/data_dayshift_detail", pushHandler.PushDataPosDayShiftDetail)
 
-	// ENDDAY JURNAL & REVERT
+	// ENDDAY JURNAL & REVERT -- token-based auth (sama kayak syncRouter), token diteruskan ke
+	// sudocore2 biar divalidasi ulang di sana juga (lihat backend/modules/apipos/endday).
+	enddayRouter := router.Group("/endday", middleware.BranchTokenAuth(config.DB))
+	enddayHandler := endday.NewHandler()
+	enddayRouter.GET("/jurnal/:branch_id/:dayshift_ulid", enddayHandler.RequestEndDay)
+	enddayRouter.GET("/jurnal-revert/:branch_id/:dayshift_ulid", enddayHandler.RequestEndDayRevert)
 
-	enddayRouter := router.Group("/endday")
-	enddayRouter.GET("/jurnal/:branch_id/:dayshift_ulid", func(ctx *gin.Context) {
-		resp := helpers.NewResponse()
-
-		branch_id := ctx.Param("branch_id")
-		dayshift_ulid := ctx.Param("dayshift_ulid")
-		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
-
-
-		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/endday-jurnal/"+branch_id+"/"+dayshift_ulid)
-		if err != nil {
-
-			log.Println(err)
-			ctx.JSON(200, resp.SetCode(100).SetMessage(err.Error()))
-			return
-		}
-			ctx.JSON(200, resp.SetCode(0).SetMessage("ok"))
-
-	});
-
-	enddayRouter.GET("/jurnal-revert/:dayshift_ulid", func(ctx *gin.Context) {
-		resp := helpers.NewResponse()
-
-		dayshift_ulid := ctx.Param("dayshift_ulid")
-		SERVER_SUDOCORE := "http://"+os.Getenv("APP_SUDOCORE_HOST")+":"+os.Getenv("APP_SUDOCORE_PORT")
-
-
-		_,err := http.Get(SERVER_SUDOCORE+"/api/pos/revert-jurnal/"+dayshift_ulid)
-		if err != nil {
-			ctx.JSON(200, resp.SetCode(100).SetMessage(err.Error()))
-			return
-		}
-			ctx.JSON(200, resp.SetCode(0).SetMessage("ok"))
-
-	});
+	// MEMBER -- live lookup by phone_number (bukan sync pull), token-based auth sama kayak endday.
+	memberRouter := router.Group("/member", middleware.BranchTokenAuth(config.DB))
+	memberHandler := member.NewHandler(config.DB)
+	memberRouter.GET("/:branch_id/by-phone/:phone_number", memberHandler.CheckByPhone)
 }

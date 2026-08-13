@@ -10,8 +10,9 @@ type CategoryDTO struct {
 }
 
 type SubCategoryDTO struct {
-	ID   int    `bun:"id" json:"id"`
-	Name string `bun:"name" json:"name"`
+	ID      int    `bun:"id" json:"id"`
+	Name    string `bun:"name" json:"name"`
+	IconSrc string `bun:"icon_src" json:"icon_src"`
 }
 
 type Branch struct {
@@ -86,15 +87,16 @@ type MasterTax struct {
 }
 
 type MasterTerminal struct {
-	ID               int    `bun:"id" json:"id"`
-	Name             string `bun:"name" json:"name"`
-	BranchID         int    `bun:"branch_id" json:"branch_id"`
-	DeviceID         string `bun:"device_id" json:"device_id"`
-	POSTypeID        int    `bun:"pos_type_id" json:"pos_type_id"`
-	IsActive         bool   `bun:"is_active" json:"is_active"`
-	IsUsed           bool   `bun:"is_used" json:"is_used"`
-	TableSectionID   *int64 `bun:"table_section_id" json:"table_section_id"`
-	ReceiptStationID *int64 `bun:"receipt_station_id" json:"receipt_station_id"`
+	ID                  int    `bun:"id" json:"id"`
+	Name                string `bun:"name" json:"name"`
+	BranchID            int    `bun:"branch_id" json:"branch_id"`
+	DeviceID            string `bun:"device_id" json:"device_id"`
+	POSTypeID           int    `bun:"pos_type_id" json:"pos_type_id"`
+	IsActive            bool   `bun:"is_active" json:"is_active"`
+	IsUsed              bool   `bun:"is_used" json:"is_used"`
+	TableSectionID      *int64 `bun:"table_section_id" json:"table_section_id"`
+	ReceiptStationID    *int64 `bun:"receipt_station_id" json:"receipt_station_id"`
+	FlagPrinterFrontend bool   `bun:"flag_printer_frontend" json:"flag_printer_frontend"`
 }
 
 // /////////////////////////////////////////////////////////////////////
@@ -110,6 +112,7 @@ type MasterItem struct {
 	BomID         int    `bun:"bom_id" json:"bom_id"`
 	MenuColor     string `bun:"menu_color" json:"menu_color"`
 	Image         string `bun:"image" json:"image"`
+	IconSrc       string `bun:"icon_src" json:"icon_src"`
 	TaxType       string `bun:"tax_type" json:"tax_type"`
 }
 
@@ -172,6 +175,7 @@ type MasterPaymentMethod struct {
 	FixedAmount               string  `bun:"fixed_amount" json:"fixed_amount"`
 	VerificationCodeMandatory bool    `bun:"verification_code_mandatory" json:"verification_code_mandatory"`
 	CardNumberCodeMandatory   bool    `bun:"card_number_code_mandatory" json:"card_number_code_mandatory"`
+	PaymentGatewayCode        *string `bun:"payment_gateway_code" json:"payment_gateway_code"`
 }
 
 type MasterPaymentMethodGroup struct {
@@ -204,6 +208,33 @@ type MasterBranchVisitPurpose struct {
 type MasterVisitPurpose struct {
 	ID   int    `bun:"id" json:"id"`
 	Name string `bun:"name" json:"name"`
+}
+
+type MasterBranchOpsSetting struct {
+	ID         int     `bun:"id" json:"id"`
+	Day        string  `bun:"day" json:"day"`
+	Status     string  `bun:"status" json:"status"`
+	OpenTime   *string `bun:"open_time" json:"open_time"`
+	ClosedTime *string `bun:"closed_time" json:"closed_time"`
+}
+
+type MasterImage struct {
+	ID       int    `bun:"id" json:"id"`
+	Name     string `bun:"name" json:"name"`
+	IsActive bool   `bun:"is_active" json:"is_active"`
+}
+
+type MasterImageList struct {
+	ID            int    `bun:"id" json:"id"`
+	MasterImageID int    `bun:"master_image_id" json:"master_image_id"`
+	ImageSrc      string `bun:"image_src" json:"image_src"`
+	Sequence      int    `bun:"sequence" json:"sequence"`
+}
+
+type MasterImageListApplyFor struct {
+	ID                int    `bun:"id" json:"id"`
+	MasterImageListID int    `bun:"master_image_list_id" json:"master_image_list_id"`
+	ApplyFor          string `bun:"apply_for" json:"apply_for"`
 }
 
 type MasterTableSectionPrintCategorySetting struct {

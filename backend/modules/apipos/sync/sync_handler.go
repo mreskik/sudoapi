@@ -321,6 +321,66 @@ func (h *SyncHandler) GetMasterBranchVisitPurpose(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
+func (h *SyncHandler) GetMasterBranchOpsSetting(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterBranchOpsSetting(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data branch ops setting!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetMasterImage(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterImage(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetMasterImageList(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterImageList(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetMasterImageListApplyFor(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterImageListApplyFor(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list apply for!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (h *SyncHandler) GetMasterVisitPurpose(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)

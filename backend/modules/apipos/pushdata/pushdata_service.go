@@ -169,3 +169,43 @@ func(this *PushDataService) PushPOSOrderPayment(context context.Context, data_or
 	}
 	return nil
 }
+
+func(this *PushDataService) PushPOSDayShift(context context.Context, data_dayshift_request PosDayShiftDTO)error{
+	tx, err := this.DB.BeginTx(context, nil)
+	if err != nil {
+		return err
+	}
+
+	for _,v := range data_dayshift_request.ListDayShift {
+		_,err= tx.NewInsert().Model(&v).On("CONFLICT (ulid) DO UPDATE").Exec(context)
+		if err != nil {
+			return err
+		}
+	}
+
+	err= tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func(this *PushDataService) PushPOSDayShiftDetail(context context.Context, data_dayshift_detail_request PosDayShiftDetailDTO)error{
+	tx, err := this.DB.BeginTx(context, nil)
+	if err != nil {
+		return err
+	}
+
+	for _,v := range data_dayshift_detail_request.ListDayShiftDetail {
+		_,err= tx.NewInsert().Model(&v).On("CONFLICT (ulid) DO UPDATE").Exec(context)
+		if err != nil {
+			return err
+		}
+	}
+
+	err= tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}

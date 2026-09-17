@@ -699,7 +699,7 @@ func (this *SetupHandler) GetMasterImage(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
-func (this *SetupHandler) GetMasterImageList(c *gin.Context) {
+func (this *SetupHandler) GetMasterImageCustomerDisplay(c *gin.Context) {
 	res := helpers.NewResponse()
 
 	var login Login
@@ -720,16 +720,16 @@ func (this *SetupHandler) GetMasterImageList(c *gin.Context) {
 		return
 	}
 
-	data, err := this.masterService.GetMasterImageList(c, branch_id)
+	data, err := this.masterService.GetMasterImageCustomerDisplay(c, branch_id)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list!"))
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image customer display!"))
 		return
 	}
 
 	c.JSON(200, res.Success().SetData(data))
 }
 
-func (this *SetupHandler) GetMasterImageListApplyFor(c *gin.Context) {
+func (this *SetupHandler) GetMasterImageKiosk(c *gin.Context) {
 	res := helpers.NewResponse()
 
 	var login Login
@@ -750,9 +750,9 @@ func (this *SetupHandler) GetMasterImageListApplyFor(c *gin.Context) {
 		return
 	}
 
-	data, err := this.masterService.GetMasterImageListApplyFor(c, branch_id)
+	data, err := this.masterService.GetMasterImageKiosk(c, branch_id)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list apply for!"))
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image kiosk!"))
 		return
 	}
 
@@ -789,8 +789,6 @@ func (this *SetupHandler) GetMasterVisitPurpose(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data_tax))
 }
 
-
-
 func (this *SetupHandler) GetMasterTableSectionPrintCategorySetting(c *gin.Context) {
 	res := helpers.NewResponse()
 
@@ -820,7 +818,6 @@ func (this *SetupHandler) GetMasterTableSectionPrintCategorySetting(c *gin.Conte
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
-
 
 func (this *SetupHandler) GetMasterUser(c *gin.Context) {
 	res := helpers.NewResponse()
@@ -852,7 +849,6 @@ func (this *SetupHandler) GetMasterUser(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data_tax))
 }
 
-
 func (this *SetupHandler) GetMasterRoleAccess(c *gin.Context) {
 	res := helpers.NewResponse()
 
@@ -882,7 +878,6 @@ func (this *SetupHandler) GetMasterRoleAccess(c *gin.Context) {
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
-
 
 func (this *SetupHandler) GetPromoList(c *gin.Context) {
 	res := helpers.NewResponse()
@@ -1154,6 +1149,36 @@ func (this *SetupHandler) GetPromoTime(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
+func (this *SetupHandler) GetPromoApplyTo(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterPromoApplyTo(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo apply to!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (this *SetupHandler) GetMemberTypeList(c *gin.Context) {
 	res := helpers.NewResponse()
 
@@ -1243,4 +1268,3 @@ func (this *SetupHandler) GetMenuApp(c *gin.Context) {
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
-

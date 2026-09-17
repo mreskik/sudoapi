@@ -34,5 +34,3 @@ func (this *SetupService) CekLogin(context context.Context, username, password s
 	}
 	return true, datauser.Id, err
 }
-
-

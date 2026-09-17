@@ -216,6 +216,21 @@ func (h *SyncHandler) GetItemPackageDetail(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
+func (h *SyncHandler) GetItemPackageDetailPricelist(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetItemPackageDetailPricelist(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data item package detail pricelist!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (h *SyncHandler) GetPriceList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
@@ -351,31 +366,31 @@ func (h *SyncHandler) GetMasterImage(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
-func (h *SyncHandler) GetMasterImageList(c *gin.Context) {
+func (h *SyncHandler) GetMasterImageCustomerDisplay(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
 		return
 	}
-	data, err := h.masterService.GetMasterImageList(c, branch_id)
+	data, err := h.masterService.GetMasterImageCustomerDisplay(c, branch_id)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list!"))
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image customer display!"))
 		return
 	}
 	c.JSON(200, res.Success().SetData(data))
 }
 
-func (h *SyncHandler) GetMasterImageListApplyFor(c *gin.Context) {
+func (h *SyncHandler) GetMasterImageKiosk(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
 		return
 	}
-	data, err := h.masterService.GetMasterImageListApplyFor(c, branch_id)
+	data, err := h.masterService.GetMasterImageKiosk(c, branch_id)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image list apply for!"))
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data master image kiosk!"))
 		return
 	}
 	c.JSON(200, res.Success().SetData(data))
@@ -586,6 +601,21 @@ func (h *SyncHandler) GetPromoTime(c *gin.Context) {
 	data, err := h.masterService.GetMasterPromoTimes(c, branch_id)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo time!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetPromoApplyTo(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterPromoApplyTo(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo apply to!"))
 		return
 	}
 	c.JSON(200, res.Success().SetData(data))

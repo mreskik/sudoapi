@@ -10,9 +10,10 @@ type CategoryDTO struct {
 }
 
 type SubCategoryDTO struct {
-	ID      int    `bun:"id" json:"id"`
-	Name    string `bun:"name" json:"name"`
-	IconSrc string `bun:"icon_src" json:"icon_src"`
+	ID        int    `bun:"id" json:"id"`
+	Name      string `bun:"name" json:"name"`
+	IconSrc   string `bun:"icon_src" json:"icon_src"`
+	BannerSrc string `bun:"banner_src" json:"banner_src"`
 }
 
 type Branch struct {
@@ -107,6 +108,7 @@ type MasterItem struct {
 	ShortName     string `bun:"short_name" json:"short_name"`
 	Name          string `bun:"name" json:"name"`
 	Code          string `bun:"code" json:"code"`
+	Description   string `bun:"description" json:"description"`
 	CategoryID    int    `bun:"category_id" json:"category_id"`
 	SubcategoryID int    `bun:"subcategory_id" json:"subcategory_id"`
 	BomID         int    `bun:"bom_id" json:"bom_id"`
@@ -135,10 +137,25 @@ type ItemPackageGroup struct {
 }
 
 type ItemPackageDetail struct {
-	ID               int    `bun:"id" json:"id"`
-	PackageGroupID   int    `bun:"package_group_id" json:"package_group_id"`
-	ItemConvDetailID int    `bun:"item_conv_detail_id" json:"item_conv_detail_id"`
-	Price            string `bun:"price,type:numeric(20,2)" json:"price"`
+	ID                  int    `bun:"id" json:"id"`
+	PackageGroupID      int    `bun:"package_group_id" json:"package_group_id"`
+	ItemConvDetailID    int    `bun:"item_conv_detail_id" json:"item_conv_detail_id"`
+	Price               string `bun:"price,type:numeric(20,2)" json:"price"`
+	FlagAllMenuTemplate bool   `bun:"flag_all_menu_template" json:"flag_all_menu_template"`
+	DefaultItem         bool   `bun:"default_item" json:"default_item"`
+}
+
+// ItemPackageDetailPricelist: override harga sub-item package PER pricelist (2026-08-26) --
+// dikonsumsi kalau ItemPackageDetail.FlagAllMenuTemplate = false. Sumbernya
+// master_item_package_detail_menu_template (ERP), tapi field-nya dinamain "pricelist_id"
+// (bukan "menu_template_id") biar konsisten sama penamaan yang UDAH DIPAKE di sisi POS sendiri
+// (mr_pricelist_detail.pricelist_id) -- APIANDORDER jadi titik translasi nama antar 2 sistem
+// yang beda konvensi.
+type ItemPackageDetailPricelist struct {
+	ID                  int    `bun:"id" json:"id"`
+	ItemPackageDetailID int    `bun:"item_package_detail_id" json:"item_package_detail_id"`
+	PricelistID         int    `bun:"pricelist_id" json:"pricelist_id"`
+	Price               string `bun:"price,type:numeric(18,2)" json:"price"`
 }
 
 //
@@ -224,17 +241,24 @@ type MasterImage struct {
 	IsActive bool   `bun:"is_active" json:"is_active"`
 }
 
-type MasterImageList struct {
+// MasterImageCustomerDisplay/MasterImageKiosk: gambar per-channel (2026-08-24, ganti dari
+// MasterImageList + MasterImageListApplyFor) -- 1 gambar cuma nempel ke 1 channel, implisit
+// dari tabel mana dia diambil (master_image_customer_display buat cd_pos, master_image_kiosk
+// buat cd_kiosk). Lihat MASTER IMAGE.md di sudocore2.
+type MasterImageCustomerDisplay struct {
 	ID            int    `bun:"id" json:"id"`
 	MasterImageID int    `bun:"master_image_id" json:"master_image_id"`
-	ImageSrc      string `bun:"image_src" json:"image_src"`
+	Name          string `bun:"name" json:"name"`
+	BannerSrc     string `bun:"banner_src" json:"banner_src"`
 	Sequence      int    `bun:"sequence" json:"sequence"`
 }
 
-type MasterImageListApplyFor struct {
-	ID                int    `bun:"id" json:"id"`
-	MasterImageListID int    `bun:"master_image_list_id" json:"master_image_list_id"`
-	ApplyFor          string `bun:"apply_for" json:"apply_for"`
+type MasterImageKiosk struct {
+	ID            int    `bun:"id" json:"id"`
+	MasterImageID int    `bun:"master_image_id" json:"master_image_id"`
+	Name          string `bun:"name" json:"name"`
+	BannerSrc     string `bun:"banner_src" json:"banner_src"`
+	Sequence      int    `bun:"sequence" json:"sequence"`
 }
 
 type MasterTableSectionPrintCategorySetting struct {
@@ -304,6 +328,8 @@ type MasterPromo struct {
 	FlagAllDays  bool `bun:"flag_all_days" json:"flag_all_days"`
 	FlagAllTimes bool `bun:"flag_all_times" json:"flag_all_times"`
 
+	FlagApplyToAll bool `bun:"flag_apply_to_all" json:"flag_apply_to_all"`
+
 	IsActive bool `bun:"is_active" json:"is_active"`
 
 	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
@@ -319,6 +345,7 @@ type MasterPromo struct {
 	Items         []MasterPromoItems         `json:"items,omitempty"`
 	Days          []MasterPromoDays          `json:"days,omitempty"`
 	Times         []MasterPromoTimes         `json:"times,omitempty"`
+	ApplyTo       []MasterPromoApplyTo       `json:"apply_to,omitempty"`
 }
 
 type MasterPromoBranches struct {
@@ -368,6 +395,12 @@ type MasterPromoTimes struct {
 	PromoID   int    `bun:"promo_id" json:"promo_id"`
 	TimeStart string `bun:"time_start" json:"time_start"` // TIME, format: "15:04:05"
 	TimeEnd   string `bun:"time_end" json:"time_end"`     // TIME, format: "15:04:05"
+}
+
+type MasterPromoApplyTo struct {
+	ID      int    `bun:"id" json:"id"`
+	PromoID int    `bun:"promo_id" json:"promo_id"`
+	ApplyTo string `bun:"apply_to" json:"apply_to"` // pos, kiosk, mobile_customer, qr_order
 }
 
 // /////////////////////////////////////////////////////////////////////

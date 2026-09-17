@@ -125,7 +125,8 @@ func (this *MasterService) GetMasterSubCategory(context context.Context, branch_
 	err := this.DB.NewRaw(`SELECT
 msc.id,
 msc.name,
-COALESCE(msc.icon_src, '') as icon_src
+COALESCE(msc.icon_src, '') as icon_src,
+COALESCE(msc.banner_src, '') as banner_src
 from master_item_sub_category msc
 JOIN master_branch mb on msc.company_id = mb.company_id AND mb.id = ?`, branch_id).Scan(context, &data)
 	if err != nil {
@@ -220,6 +221,7 @@ mi.id,
 mi.item_longname as short_name,
 mi.item_name as name,
 mi.item_code as code,
+COALESCE(mi.item_description, '') as description,
 mi.item_category as category_id,
 mi.item_subcategory as subcategory_id,
 mi.item_bom as bom_id,
@@ -295,7 +297,9 @@ func (this *MasterService) GetItemPackageDetail(context context.Context, branch_
 mipd.id,
 mipd.package_group_id,
 mipd.item_conversion_detail_id as item_conv_detail_id,
-mipd.price
+mipd.price,
+mipd.flag_all_menu_template,
+mipd.default_item
 
 FROM master_item_package_detail mipd
 JOIN master_item_package_group mipg on mipg.id = mipd.package_group_id
@@ -305,6 +309,31 @@ JOIN master_branch mb on mb.company_id = mi.company_id
 
 WHERE mb.id = ?`, branch_id).Scan(context, &data)
 
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+// GetItemPackageDetailPricelist: override harga sub-item package per pricelist (2026-08-26) --
+// sumbernya master_item_package_detail_menu_template (ERP), field menu_template_id di-alias
+// "pricelist_id" di response (lihat catatan di ItemPackageDetailPricelist DTO).
+func (this *MasterService) GetItemPackageDetailPricelist(context context.Context, branch_id int) ([]ItemPackageDetailPricelist, error) {
+	data := []ItemPackageDetailPricelist{}
+	err := this.DB.NewRaw(`SELECT
+mt.id,
+mt.master_item_package_detail_id as item_package_detail_id,
+mt.menu_template_id as pricelist_id,
+mt.price
+
+FROM master_item_package_detail_menu_template mt
+JOIN master_item_package_detail mipd on mipd.id = mt.master_item_package_detail_id
+JOIN master_item_package_group mipg on mipg.id = mipd.package_group_id
+JOIN master_item_package mip on mip.id = mipg.item_package_id
+JOIN master_item mi on mi.id = mip.item_id
+JOIN master_branch mb on mb.company_id = mi.company_id
+
+WHERE mb.id = ?`, branch_id).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -459,11 +488,11 @@ func (this *MasterService) GetMasterBranchOpsSetting(context context.Context, br
 	return data, nil
 }
 
-// GetMasterImage, GetMasterImageList, GetMasterImageListApplyFor -- 3 endpoint flat terpisah
-// buat data nested master_image (header -> image_list -> apply_for), ngikutin pola
-// master_item_package/_group/_detail (join berjenjang sampai ke master_image, filter branch
-// relevan di tiap level). Sama kayak master_promo: flag_all_branches -- kalau true, image ini
-// berlaku lintas SEMUA branch/company (bukan cuma company branch itu sendiri), gak ada
+// GetMasterImage, GetMasterImageCustomerDisplay, GetMasterImageKiosk -- 3 endpoint flat
+// terpisah buat data master_image per-channel (2026-08-24, ganti dari header -> image_list ->
+// apply_for jadi header -> customer_display / kiosk, 2 tabel eksplisit sejajar, gak ada lagi
+// join grandchild apply_for). Sama kayak master_promo: flag_all_branches -- kalau true, image
+// ini berlaku lintas SEMUA branch/company (bukan cuma company branch itu sendiri), gak ada
 // company_id di master_image.
 func (this *MasterService) GetMasterImage(context context.Context, branch_id int) ([]MasterImage, error) {
 	data := []MasterImage{}
@@ -479,12 +508,12 @@ func (this *MasterService) GetMasterImage(context context.Context, branch_id int
 	return data, nil
 }
 
-func (this *MasterService) GetMasterImageList(context context.Context, branch_id int) ([]MasterImageList, error) {
-	data := []MasterImageList{}
+func (this *MasterService) GetMasterImageCustomerDisplay(context context.Context, branch_id int) ([]MasterImageCustomerDisplay, error) {
+	data := []MasterImageCustomerDisplay{}
 	err := this.DB.NewRaw(`
-	SELECT mil.id, mil.master_image_id, mil.image_src, mil.sequence
-	FROM master_image_list mil
-	JOIN master_image mi ON mi.id = mil.master_image_id
+	SELECT micd.id, micd.master_image_id, micd.name, micd.banner_src, micd.sequence
+	FROM master_image_customer_display micd
+	JOIN master_image mi ON mi.id = micd.master_image_id
 	LEFT JOIN master_image_branches mib ON mib.master_image_id = mi.id AND mib.branch_id = ?
 	WHERE mi.is_active = true AND (mi.flag_all_branches = true OR mib.id IS NOT NULL)
 	`, branch_id).Scan(context, &data)
@@ -494,13 +523,12 @@ func (this *MasterService) GetMasterImageList(context context.Context, branch_id
 	return data, nil
 }
 
-func (this *MasterService) GetMasterImageListApplyFor(context context.Context, branch_id int) ([]MasterImageListApplyFor, error) {
-	data := []MasterImageListApplyFor{}
+func (this *MasterService) GetMasterImageKiosk(context context.Context, branch_id int) ([]MasterImageKiosk, error) {
+	data := []MasterImageKiosk{}
 	err := this.DB.NewRaw(`
-	SELECT milaf.id, milaf.master_image_list_id, milaf.apply_for
-	FROM master_image_list_apply_for milaf
-	JOIN master_image_list mil ON mil.id = milaf.master_image_list_id
-	JOIN master_image mi ON mi.id = mil.master_image_id
+	SELECT mik.id, mik.master_image_id, mik.name, mik.banner_src, mik.sequence
+	FROM master_image_kiosk mik
+	JOIN master_image mi ON mi.id = mik.master_image_id
 	LEFT JOIN master_image_branches mib ON mib.master_image_id = mi.id AND mib.branch_id = ?
 	WHERE mi.is_active = true AND (mi.flag_all_branches = true OR mib.id IS NOT NULL)
 	`, branch_id).Scan(context, &data)
@@ -658,6 +686,7 @@ mp.flag_all_visit_purposes,
 mp.flag_all_type_members,
 mp.flag_all_days,
 mp.flag_all_times,
+mp.flag_apply_to_all,
 mp.is_active,
 mp.created_at,
 mp.created_by,
@@ -801,6 +830,23 @@ mpt.time_start,
 mpt.time_end
 FROM master_promo_times mpt
 JOIN master_promo mp on mp.id = mpt.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoApplyTo(context context.Context, branch_id int) ([]MasterPromoApplyTo, error) {
+	data := []MasterPromoApplyTo{}
+	err := this.DB.NewRaw(`SELECT
+mpat.id,
+mpat.promo_id,
+mpat.apply_to
+FROM master_promo_apply_to mpat
+JOIN master_promo mp on mp.id = mpat.promo_id
 LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
 WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
 

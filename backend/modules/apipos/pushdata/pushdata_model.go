@@ -112,21 +112,21 @@ type PosOrderDetailModel struct {
 
 	FlagInclusiveTax bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
-	BasePrice string `bun:"base_price,type:numeric(20,2)" json:"base_price"`
+	PricePos string `bun:"price_pos,type:numeric(20,2)" json:"price_pos"`
 
 	TaxID   *int64  `bun:"tax_id" json:"tax_id"`
 	TaxType *string `bun:"tax_type" json:"tax_type"`
 
-	TaxRate  string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
-	TaxValue string `bun:"tax_value,type:numeric(20,2)" json:"tax_value"`
+	TaxRate   string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
+	TaxAmount string `bun:"tax_amount,type:numeric(20,2)" json:"tax_amount"`
 
 	PromoID         *int64 `bun:"promo_id" json:"promo_id"`
 	IsFreeItemPromo bool   `bun:"is_free_item_promo" json:"is_free_item_promo"`
 
-	DiscountRate  string `bun:"discount_rate,type:numeric(20,2)" json:"discount_rate"`
-	DiscountValue string `bun:"discount_value,type:numeric(20,2)" json:"discount_value"`
-	AfterDiscount string `bun:"after_discount,type:numeric(20,2)" json:"after_discount"`
-	Dpp           string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+	DiscountPercent string `bun:"discount_percent,type:numeric(20,2)" json:"discount_percent"`
+	DiscountAmount  string `bun:"discount_amount,type:numeric(20,2)" json:"discount_amount"`
+	Dpp             string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+	NetDpp          string `bun:"net_dpp,type:numeric(20,2)" json:"net_dpp"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 
@@ -168,20 +168,20 @@ type PosOrderDetailPackageModel struct {
 
 	FlagInclusiveTax bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
-	BasePrice string `bun:"base_price,type:numeric(20,2)" json:"base_price"`
+	PricePos string `bun:"price_pos,type:numeric(20,2)" json:"price_pos"`
 
 	TaxID   *int64  `bun:"tax_id" json:"tax_id"`
 	TaxType *string `bun:"tax_type" json:"tax_type"`
 
-	TaxRate  string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
-	TaxValue string `bun:"tax_value,type:numeric(20,2)" json:"tax_value"`
+	TaxRate   string `bun:"tax_rate,type:numeric(20,2)" json:"tax_rate"`
+	TaxAmount string `bun:"tax_amount,type:numeric(20,2)" json:"tax_amount"`
 
 	PromoID *int64 `bun:"promo_id" json:"promo_id"`
 
-	DiscountRate  string `bun:"discount_rate,type:numeric(20,2)" json:"discount_rate"`
-	DiscountValue string `bun:"discount_value,type:numeric(20,2)" json:"discount_value"`
-	AfterDiscount string `bun:"after_discount,type:numeric(20,2)" json:"after_discount"`
-	Dpp           string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+	DiscountPercent string `bun:"discount_percent,type:numeric(20,2)" json:"discount_percent"`
+	DiscountAmount  string `bun:"discount_amount,type:numeric(20,2)" json:"discount_amount"`
+	Dpp             string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+	NetDpp          string `bun:"net_dpp,type:numeric(20,2)" json:"net_dpp"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 
@@ -200,6 +200,14 @@ type PosOrderPaymentModel struct {
 	PaymentMethodID int64 `bun:"payment_method_id" json:"payment_method_id"`
 
 	PaymentAmount string `bun:"payment_amount,type:numeric(20,2)" json:"payment_amount"`
+
+	// ChangeAmount: kembalian tunai (uang diterima - payment_amount), SELALU 0 buat method
+	// non-cash. Disepakati 2026-08-31, lihat cmd/migration/137_*.sql (sudocore2) -- WAJIB
+	// selaras sama pos_model.go di situ, dua-duanya nge-map ke tabel pos_order_payment yang
+	// SAMA. Kalau field ini ketinggalan di sini, data-nya ke-drop diam-diam pas ShouldBindJSON
+	// (ngabaikan field JSON yang gak dikenal struct-nya) -- sama kasus yang udah kejadian ke
+	// chasier_name/customer_phone_number, lihat DOKUMENTASI API/SYNC/SYNC PUSH.md di posv1-laravel.
+	ChangeAmount string `bun:"change_amount,type:numeric(20,2)" json:"change_amount"`
 
 	VoucherCode *string `bun:"voucher_code" json:"voucher_code"`
 

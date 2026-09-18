@@ -149,3 +149,47 @@ func (this *PushDataHandler) PushDataPosDayShiftDetail(c *gin.Context) {
 
 	c.JSON(200, res.SetMessage("success push data!").SetCode(0))
 }
+
+func (this *PushDataHandler) PushDataPosRemoveItemBeforeSave(c *gin.Context) {
+	res := helpers.NewResponse()
+	list_data_request := PosRemoveItemBeforeSaveDTO{}
+
+	err := c.ShouldBindJSON(&list_data_request)
+	if err != nil {
+		res.SetCode(100)
+		c.JSON(200, res.SetMessage(err.Error()))
+		return
+	}
+
+	err = this.PushDataService.PushPOSRemoveItemBeforeSave(c, list_data_request)
+
+	if err != nil {
+		res.SetCode(100)
+		c.JSON(200, res.SetMessage(err.Error()))
+		return
+	}
+
+	c.JSON(200, res.SetMessage("success push data!").SetCode(0))
+}
+
+func (this *PushDataHandler) PushDataPosRemoveItemBeforeSavePackage(c *gin.Context) {
+	res := helpers.NewResponse()
+	list_data_request := PosRemoveItemBeforeSavePackageDTO{}
+
+	err := c.ShouldBindJSON(&list_data_request)
+	if err != nil {
+		res.SetCode(100)
+		c.JSON(200, res.SetMessage(err.Error()))
+		return
+	}
+
+	err = this.PushDataService.PushPOSRemoveItemBeforeSavePackage(c, list_data_request)
+
+	if err != nil {
+		res.SetCode(100)
+		c.JSON(200, res.SetMessage(err.Error()))
+		return
+	}
+
+	c.JSON(200, res.SetMessage("success push data!").SetCode(0))
+}

@@ -259,3 +259,44 @@ type PosDayShiftDetailModel struct {
 	ShiftUserID  int64      `bun:"shift_user_id" json:"shift_user_id"`
 	SyncAt       *time.Time `bun:"sync_at" json:"sync_at"`
 }
+
+// PosRemoveItemBeforeSaveModel: audit trail item yang dihapus kasir dari cart lokal SEBELUM
+// order pernah tersimpan (counterpart ERP dari tr_remove_item_before_save di POS, sudocore2
+// migration 213/214). CompanyId di-resolve di sini (PushPOSRemoveItemBeforeSave()), sama pola
+// kayak PosOrderModel.CompanyId -- BranchID sendiri yang dikirim POS, company_id-nya dicari dari
+// master_branch.
+type PosRemoveItemBeforeSaveModel struct {
+	bun.BaseModel `bun:"table:pos_remove_item_before_save"`
+
+	ULID string `bun:"ulid,pk" json:"ulid"`
+
+	BranchID  int64 `bun:"branch_id" json:"branch_id"`
+	CompanyId *int  `bun:"company_id" json:"company_id"`
+
+	OrderNumber  *string `bun:"order_number" json:"order_number"`
+	DayshiftULID *string `bun:"dayshift_ulid" json:"dayshift_ulid"`
+	ItemConvID   *int64  `bun:"item_conv_id" json:"item_conv_id"`
+
+	Qty int64 `bun:"qty" json:"qty"`
+
+	CreatedAt *time.Time `bun:"created_at" json:"created_at"`
+	CreatedBy *int64     `bun:"created_by" json:"created_by"`
+
+	SyncAt *time.Time `bun:"sync_at" json:"sync_at"`
+}
+
+// PosRemoveItemBeforeSavePackageModel: sub-item package yang ikut lenyap bareng item HEAD-nya
+// (counterpart ERP dari tr_remove_item_before_save_package). Gak punya company_id sendiri --
+// sama pola kayak PosOrderDetailPackageModel, ikut header lewat TrRemoveItemBeforeSaveULID.
+type PosRemoveItemBeforeSavePackageModel struct {
+	bun.BaseModel `bun:"table:pos_remove_item_before_save_package"`
+
+	ULID string `bun:"ulid,pk" json:"ulid"`
+
+	TrRemoveItemBeforeSaveULID string `bun:"tr_remove_item_before_save_ulid" json:"tr_remove_item_before_save_ulid"`
+
+	ItemConvID *int64 `bun:"item_conv_id" json:"item_conv_id"`
+	Qty        int64  `bun:"qty" json:"qty"`
+
+	SyncAt *time.Time `bun:"sync_at" json:"sync_at"`
+}

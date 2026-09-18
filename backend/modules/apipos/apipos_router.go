@@ -147,6 +147,8 @@ func Register(app *gin.Engine) {
 	pushRouter.POST("/data_order_payment", pushHandler.PushDataPosOrderPayment)
 	pushRouter.POST("/data_dayshift", pushHandler.PushDataPosDayShift)
 	pushRouter.POST("/data_dayshift_detail", pushHandler.PushDataPosDayShiftDetail)
+	pushRouter.POST("/data_remove_item_before_save", pushHandler.PushDataPosRemoveItemBeforeSave)
+	pushRouter.POST("/data_remove_item_before_save_package", pushHandler.PushDataPosRemoveItemBeforeSavePackage)
 
 	// ENDDAY JURNAL & REVERT -- token-based auth (sama kayak syncRouter), token diteruskan ke
 	// sudocore2 biar divalidasi ulang di sana juga (lihat backend/modules/apipos/endday).

@@ -23,3 +23,11 @@ type PosDayShiftDTO struct {
 type PosDayShiftDetailDTO struct {
 	ListDayShiftDetail []PosDayShiftDetailModel `json:"list_dayshift_detail"`
 }
+
+type PosRemoveItemBeforeSaveDTO struct {
+	ListRemoveItemBeforeSave []PosRemoveItemBeforeSaveModel `json:"list_remove_item_before_save"`
+}
+
+type PosRemoveItemBeforeSavePackageDTO struct {
+	ListRemoveItemBeforeSavePackage []PosRemoveItemBeforeSavePackageModel `json:"list_remove_item_before_save_package"`
+}

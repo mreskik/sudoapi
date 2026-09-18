@@ -199,3 +199,58 @@ func (this *PushDataService) PushPOSDayShiftDetail(context context.Context, data
 	}
 	return nil
 }
+
+// PushPOSRemoveItemBeforeSave: sama pola kayak PushPOSOrder -- CompanyId di-resolve di sini dari
+// BranchID baris pertama (satu request selalu 1 branch yang sama, dari 1 POS lokal).
+func (this *PushDataService) PushPOSRemoveItemBeforeSave(context context.Context, data_request PosRemoveItemBeforeSaveDTO) error {
+	tx, err := this.DB.BeginTx(context, nil)
+	if err != nil {
+		return err
+	}
+
+	if len(data_request.ListRemoveItemBeforeSave) > 0 {
+		DETAIL_BRANCH := BranchDetails{}
+		err := tx.NewRaw(`
+		SELECT id,company_id,name as branch_name from master_branch where id = ?
+		`, data_request.ListRemoveItemBeforeSave[0].BranchID).Scan(context, &DETAIL_BRANCH)
+		if err != nil {
+			return err
+		}
+
+		for _, v := range data_request.ListRemoveItemBeforeSave {
+			v.CompanyId = &DETAIL_BRANCH.CompanyId
+			_, err = tx.NewInsert().Model(&v).On("CONFLICT (ulid) DO UPDATE").Exec(context)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// PushPOSRemoveItemBeforeSavePackage: gak butuh resolve company_id (ikut header lewat
+// TrRemoveItemBeforeSaveULID), sama pola kayak PushPOSOrderDetailPackage.
+func (this *PushDataService) PushPOSRemoveItemBeforeSavePackage(context context.Context, data_request PosRemoveItemBeforeSavePackageDTO) error {
+	tx, err := this.DB.BeginTx(context, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range data_request.ListRemoveItemBeforeSavePackage {
+		_, err = tx.NewInsert().Model(&v).On("CONFLICT (ulid) DO UPDATE").Exec(context)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}

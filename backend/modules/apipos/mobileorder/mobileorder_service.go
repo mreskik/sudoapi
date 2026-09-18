@@ -13,11 +13,11 @@ import (
 func GetPending(ctx context.Context, db *bun.DB, branchID int64) ([]PendingOrder, error) {
 	var orders []PendingOrder
 	err := db.NewRaw(`
-		SELECT mo.order_number, mo.branch_id, mo.member_id, mo.visit_purpose_id, mo.order_type, mo.pax,
+		SELECT mo.order_number, mo.branch_id, mo.member_id, mo.visit_purpose_id, mo.order_type, mo.order_source, mo.pax,
 			mo.order_fee, mo.service_charge, mo.platform_fee, mo.delivery_cost,
 			mo.sub_total, mo.total_discount, mo.total_tax, mo.total_billing, mo.flag_inclusive_tax,
 			mo.customer_phone_number, mo.payment_number, mo.payment_at, mo.payment_notes, mo.created_at,
-			COALESCE(mm.name, '') AS member_name
+			mo.order_name, COALESCE(mm.name, '') AS member_name
 		FROM mb_order mo
 		LEFT JOIN master_member mm ON mm.id = mo.member_id
 		WHERE mo.branch_id = ? AND mo.status = 'paid' AND mo.pulled_at IS NULL

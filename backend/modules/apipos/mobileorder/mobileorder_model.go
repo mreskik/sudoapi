@@ -7,14 +7,27 @@ package mobileorder
 type PendingOrder struct {
 	OrderNumber string `bun:"order_number" json:"order_number"`
 	BranchID    int64  `bun:"branch_id" json:"branch_id"`
-	MemberID    int64  `bun:"member_id" json:"member_id"`
+	// MemberID: NULLABLE (2026-09-17, migration sudocore2 208) -- order QR Order itu TAMU, gak
+	// ada member sama sekali. WAJIB *int64 (bukan int64) -- GetPending() narik banyak order
+	// dalam 1 Scan, kalau field ini non-pointer, 1 baris QR (member_id NULL) bakal nge-gagalin
+	// SELURUH batch pull branch itu, bukan cuma order QR-nya doang.
+	MemberID *int64 `bun:"member_id" json:"member_id"`
 	// MemberName: JOIN live ke master_member di query (bukan denormalisasi ke mb_order) --
 	// selalu fresh (gak basi kalau member ganti nama), dan gak gantung POS udah nyinkron member
-	// itu apa belum (lihat GetPending() di mobileorder_service.go). Kosong kalau member_id gak
-	// ketemu (member ke-hapus, dsb) -- puller POS pakai ini buat isi tr_order.order_name.
-	MemberName          string  `bun:"member_name" json:"member_name"`
-	VisitPurposeID      int64   `bun:"visit_purpose_id" json:"visit_purpose_id"`
-	OrderType           string  `bun:"order_type" json:"order_type"`
+	// itu apa belum (lihat GetPending() di mobileorder_service.go). Kosong kalau member_id NULL
+	// (order QR/tamu) ATAU member ke-hapus.
+	MemberName string `bun:"member_name" json:"member_name"`
+	// OrderName: mb_order.order_name apa adanya (migration sudocore2 210+211, 2026-09-17) --
+	// SELALU NULL buat order member app (identitasnya dari MemberName di atas), SELALU keisi buat
+	// order QR (identitas tamu, wajib diisi Create). Puller POS pakai `OrderName ?? MemberName`
+	// buat isi tr_order.order_name -- 2 field ini gak pernah keisi bareng, salah satu pasti NULL.
+	OrderName      *string `bun:"order_name" json:"order_name"`
+	VisitPurposeID int64   `bun:"visit_purpose_id" json:"visit_purpose_id"`
+	OrderType      string  `bun:"order_type" json:"order_type"`
+	// OrderSource: channel asal order -- 'mobile' (member app) atau 'qr' (QR Order, belum ada
+	// endpoint Create-nya per 2026-09-17, migration sudocore2 209) -- dipakai POS buat nulis
+	// tr_order.order_source (MobileOrderPullServices::processOrder()), BUKAN cuma dilewatin.
+	OrderSource         string  `bun:"order_source" json:"order_source"`
 	Pax                 *int    `bun:"pax" json:"pax"`
 	OrderFee            float64 `bun:"order_fee" json:"order_fee"`
 	ServiceCharge       float64 `bun:"service_charge" json:"service_charge"`

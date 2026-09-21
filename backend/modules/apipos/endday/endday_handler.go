@@ -17,8 +17,8 @@ func NewHandler() *EnddayHandler {
 	return &EnddayHandler{}
 }
 
-// sudocoreResponse bentuk response dari sudocore2 endpoint /api/pos/endday-jurnal &
-// /api/pos/revert-jurnal (masih gaya lama {status, message}, bukan {code, message, data}).
+// sudocoreResponse bentuk response dari sudocore2 endpoint /backend/pos/endday-jurnal &
+// /backend/pos/revert-jurnal (masih gaya lama {status, message}, bukan {code, message, data}).
 type sudocoreResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
@@ -69,7 +69,13 @@ func (h *EnddayHandler) RequestEndDay(c *gin.Context) {
 	branchID := c.Param("branch_id")
 	dayshiftUlid := c.Param("dayshift_ulid")
 
-	url := sudocoreBaseURL() + "/api/pos/endday-jurnal/" + branchID + "/" + dayshiftUlid
+	// prefix /backend/pos/... (2026-09-21, sebelumnya /api/pos/... -- route lama itu mati total
+	// di sudocore2 sejak 2026-09-03, MasterRouter(app) di-comment pas migrasi UI, endpoint ini
+	// gak sengaja ikut mati walau bukan UI. Dipindah ke bawah grup `backend` (BackendRouter di
+	// sudocore2, BUKAN dataRoute yang session-based) -- lihat backend_routes.go. URL PUBLIK yang
+	// dipanggil POS (https://.../pos/endday/jurnal/...) TIDAK berubah, cuma target internal ini
+	// yang disesuaikan.
+	url := sudocoreBaseURL() + "/backend/pos/endday-jurnal/" + branchID + "/" + dayshiftUlid
 	parsed, err := forwardToSudocore(url, tokenFromHeader(c))
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
@@ -90,7 +96,8 @@ func (h *EnddayHandler) RequestEndDayRevert(c *gin.Context) {
 	branchID := c.Param("branch_id")
 	dayshiftUlid := c.Param("dayshift_ulid")
 
-	url := sudocoreBaseURL() + "/api/pos/revert-jurnal/" + branchID + "/" + dayshiftUlid
+	// prefix /backend/pos/... -- lihat komentar RequestEndDay() di atas.
+	url := sudocoreBaseURL() + "/backend/pos/revert-jurnal/" + branchID + "/" + dayshiftUlid
 	parsed, err := forwardToSudocore(url, tokenFromHeader(c))
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage(err.Error()))

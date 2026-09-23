@@ -13,14 +13,21 @@ import (
 type MemberTopupOnlineModel struct {
 	bun.BaseModel `bun:"table:member_topup_online"`
 
-	ID                 int64      `bun:"id,pk,autoincrement"`
-	MemberID           int64      `bun:"member_id,notnull"`
-	BranchID           *int64     `bun:"branch_id"`
-	TerminalID         *int64     `bun:"terminal_id"`
-	ReferenceNumber    string     `bun:"reference_number,notnull"`
-	Amount             string     `bun:"amount,notnull"`       // NUMERIC(20,2) -- string biar presisi gak keganggu float
-	Source             string     `bun:"source,notnull"`       // 'pos', 'kiosk', 'mobile'
-	PaymentGatewayCode *string    `bun:"payment_gateway_code"` // null = tunai
+	ID              int64  `bun:"id,pk,autoincrement"`
+	MemberID        int64  `bun:"member_id,notnull"`
+	BranchID        *int64 `bun:"branch_id"`
+	TerminalID      *int64 `bun:"terminal_id"`
+	ReferenceNumber string `bun:"reference_number,notnull"`
+	Amount          string `bun:"amount,notnull"` // NUMERIC(20,2) -- string biar presisi gak keganggu float
+	Source          string `bun:"source,notnull"` // 'pos', 'kiosk', 'mobile'
+	// PaymentMethodID (migration 221 sudocore2, 2026-09-22) -- kunci UTAMA resolve akun COA di
+	// memberbalancejurnal (SEBELUMNYA pakai PaymentGatewayCode, TERNYATA BUG: kode gateway gak
+	// unik, >1 payment method bisa pakai kode sama tapi coa_accout_id beda -- ambigu). null =
+	// tunai, WAJIB keisi buat Kiosk (gak ada opsi tunai dari situ).
+	PaymentMethodID *int64 `bun:"payment_method_id"`
+	// PaymentGatewayCode: TETAP disimpan (snapshot) -- masih dipakai manggil service `payment`
+	// (butuh string kode, bukan angka id) dan referensi histori. BUKAN lagi kunci resolve akun COA.
+	PaymentGatewayCode *string    `bun:"payment_gateway_code"`
 	Status             string     `bun:"status,notnull,default:'pending'"`
 	ExpiredAt          *time.Time `bun:"expired_at"`
 	CancelAt           *time.Time `bun:"cancel_at"`

@@ -5,14 +5,18 @@ package membertopup
 // resolve ke member_id dilakuin di sini (APIANDORDER, konek langsung ke master_member), sama
 // query yang dipakai member.CheckByPhone(), biar caller gak perlu manggil 2 endpoint terpisah
 // (by-phone dulu baru topup) buat 1 aksi.
-// PaymentGatewayCode kosong/null = tunai (langsung 'paid' saat itu juga). Keisi = lewat
-// payment gateway (status mulai 'pending', nunggu settlement -- lihat CheckStatus()).
+// PaymentMethodID kosong/null = tunai (langsung 'paid' saat itu juga). Keisi = lewat payment
+// gateway (status mulai 'pending', nunggu settlement -- lihat CheckStatus()) --
+// master_payment_method.id (PUSAT, sudocore2), BUKAN id lokal per-caller. payment_gateway_code
+// di-resolve SERVER-SIDE dari sini (migration 221, 2026-09-22 -- SEBELUMNYA caller kirim
+// payment_gateway_code langsung, diganti biar payment_method_id yang tersimpan di
+// member_topup_online JELAS & GAK AMBIGU, dipakai memberbalancejurnal resolve akun COA).
 type CreateTopupRequestDTO struct {
-	PhoneNumber        string  `json:"phone_number"`
-	Amount             float64 `json:"amount"`
-	Source             string  `json:"source"` // 'pos', 'kiosk', 'mobile'
-	PaymentGatewayCode *string `json:"payment_gateway_code"`
-	Notes              *string `json:"notes"`
+	PhoneNumber     string  `json:"phone_number"`
+	Amount          float64 `json:"amount"`
+	Source          string  `json:"source"` // 'pos', 'kiosk', 'mobile'
+	PaymentMethodID *int64  `json:"payment_method_id"`
+	Notes           *string `json:"notes"`
 	// TerminalID -- opsional (source 'pos'/'mobile' mungkin gak punya konsep terminal), dari
 	// Kiosk selalu keisi (device udah tau ID-nya sendiri, sama pola SaveOrder()). Disimpan ke
 	// member_topup_online.terminal_id + member_balance_ledger.terminal_id, di-echo balik di

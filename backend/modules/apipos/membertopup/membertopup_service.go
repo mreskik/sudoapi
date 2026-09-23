@@ -2,6 +2,7 @@ package membertopup
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,11 +30,16 @@ func paymentBaseURL() string {
 	return "http://" + os.Getenv("APP_PAYMENT_HOST") + ":" + os.Getenv("APP_PAYMENT_PORT")
 }
 
-// CreateTopup: bikin percobaan top-up baru. Tunai (PaymentGatewayCode kosong) langsung final
-// -- insert member_topup_online + member_balance_ledger dalam 1 transaksi. Gateway
-// (PaymentGatewayCode keisi) cuma insert member_topup_online 'pending' + minta QR ke service
-// payment -- member_balance_ledger BELUM disentuh sampai settlement confirmed (lihat
-// CheckStatus()).
+// CreateTopup: bikin percobaan top-up baru. Tunai (PaymentMethodID kosong) langsung final --
+// insert member_topup_online + member_balance_ledger dalam 1 transaksi. Gateway (PaymentMethodID
+// keisi) cuma insert member_topup_online 'pending' + minta QR ke service payment --
+// member_balance_ledger BELUM disentuh sampai settlement confirmed (lihat CheckStatus()).
+//
+// payment_gateway_code (migration 221 sudocore2, 2026-09-22) di-resolve SERVER-SIDE di sini dari
+// payment_method_id -- BUKAN dipercaya dari body caller lagi (dulu caller kirim
+// payment_gateway_code langsung). payment_method_id yang tersimpan JELAS & UNIK (PK
+// master_payment_method), gak ambigu kayak payment_gateway_code (gak ada constraint unique di
+// situ) yang dipakai memberbalancejurnal resolve akun COA sebelumnya.
 func (s *MemberTopupService) CreateTopup(c *gin.Context, branchID int64, req CreateTopupRequestDTO) (*CreateTopupResponseDTO, error) {
 	if req.PhoneNumber == "" {
 		return nil, errors.New("phone_number wajib diisi")
@@ -55,12 +61,32 @@ func (s *MemberTopupService) CreateTopup(c *gin.Context, branchID int64, req Cre
 		return nil, err
 	}
 
-	isCash := req.PaymentGatewayCode == nil || *req.PaymentGatewayCode == ""
+	isCash := req.PaymentMethodID == nil || *req.PaymentMethodID == 0
 
 	if isCash {
 		return s.createCashTopup(c, branchID, memberID, referenceNumber, req)
 	}
-	return s.createGatewayTopup(c, branchID, memberID, referenceNumber, req)
+
+	paymentGatewayCode, err := s.resolvePaymentGatewayCode(c, *req.PaymentMethodID)
+	if err != nil {
+		return nil, err
+	}
+	return s.createGatewayTopup(c, branchID, memberID, referenceNumber, req, paymentGatewayCode)
+}
+
+// resolvePaymentGatewayCode: payment_method_id -> payment_gateway_code, RESOLVE SERVER-SIDE
+// (master_payment_method PUSAT) -- gak pernah dipercaya dari client langsung. Kosong/gak ketemu
+// -> error eksplisit, sama pola kayak RequestPayment() order (gak ada fallback tebak-tebakan).
+func (s *MemberTopupService) resolvePaymentGatewayCode(c *gin.Context, paymentMethodID int64) (string, error) {
+	var code sql.NullString
+	err := s.DB.NewRaw(`SELECT payment_gateway_code FROM master_payment_method WHERE id = ?`, paymentMethodID).Scan(c, &code)
+	if err != nil {
+		return "", errors.New("payment method tidak ditemukan")
+	}
+	if !code.Valid || code.String == "" {
+		return "", errors.New("payment method tidak didukung")
+	}
+	return code.String, nil
 }
 
 // resolveMemberIDByPhone: SAMA PERSIS query yang dipakai member.CheckByPhone() -- caller
@@ -128,7 +154,11 @@ func (s *MemberTopupService) createCashTopup(c *gin.Context, branchID int64, mem
 
 // createGatewayTopup: minta QR ke service payment (order_id = referenceNumber). Belum ada
 // perubahan saldo di titik ini -- member_topup_online 'pending', nunggu CheckStatus() confirm.
-func (s *MemberTopupService) createGatewayTopup(c *gin.Context, branchID int64, memberID int64, referenceNumber string, req CreateTopupRequestDTO) (*CreateTopupResponseDTO, error) {
+// paymentGatewayCode: hasil resolve server-side (resolvePaymentGatewayCode()) dari
+// req.PaymentMethodID -- payment_method_id-nya SENDIRI yang disimpan ke kolom
+// member_topup_online.payment_method_id (kunci resolve COA di memberbalancejurnal),
+// payment_gateway_code cuma snapshot + dipakai manggil service `payment`.
+func (s *MemberTopupService) createGatewayTopup(c *gin.Context, branchID int64, memberID int64, referenceNumber string, req CreateTopupRequestDTO, paymentGatewayCode string) (*CreateTopupResponseDTO, error) {
 	now := time.Now()
 	amountStr := strconv.FormatFloat(req.Amount, 'f', 2, 64)
 
@@ -139,7 +169,8 @@ func (s *MemberTopupService) createGatewayTopup(c *gin.Context, branchID int64, 
 		ReferenceNumber:    referenceNumber,
 		Amount:             amountStr,
 		Source:             req.Source,
-		PaymentGatewayCode: req.PaymentGatewayCode,
+		PaymentMethodID:    req.PaymentMethodID,
+		PaymentGatewayCode: &paymentGatewayCode,
 		Status:             "pending",
 		Notes:              req.Notes,
 		CreatedAt:          now,
@@ -151,7 +182,7 @@ func (s *MemberTopupService) createGatewayTopup(c *gin.Context, branchID int64, 
 	amountInt := int64(req.Amount)
 	body, _ := json.Marshal(map[string]any{
 		"order_id":             referenceNumber,
-		"payment_gateway_code": *req.PaymentGatewayCode,
+		"payment_gateway_code": paymentGatewayCode,
 		"amount":               amountInt,
 		"branch_id":            branchID,
 	})

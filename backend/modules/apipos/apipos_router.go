@@ -82,6 +82,11 @@ func Register(app *gin.Engine) {
 	setupRouter.POST("/get_member_type_list/:branch_id", setupHandler.GetMemberTypeList)
 	setupRouter.POST("/get_member_list/:branch_id", setupHandler.GetMemberList)
 
+	setupRouter.POST("/get_notes_menu_list/:branch_id", setupHandler.GetNotesMenuList)
+	setupRouter.POST("/get_notes_menu_category/:branch_id", setupHandler.GetNotesMenuCategory)
+	setupRouter.POST("/get_notes_menu_sub_category/:branch_id", setupHandler.GetNotesMenuSubCategory)
+	setupRouter.POST("/get_notes_menu_detail/:branch_id", setupHandler.GetNotesMenuDetail)
+
 	// sync — token-based auth, no username/password
 	syncRouter := router.Group("/sync", middleware.BranchTokenAuth(config.DB))
 	syncHandler := sync.NewHandler(config.DB)
@@ -135,6 +140,11 @@ func Register(app *gin.Engine) {
 
 	syncRouter.GET("/get_member_type_list/:branch_id", syncHandler.GetMemberTypeList)
 	syncRouter.GET("/get_member_list/:branch_id", syncHandler.GetMemberList)
+
+	syncRouter.GET("/get_notes_menu_list/:branch_id", syncHandler.GetNotesMenuList)
+	syncRouter.GET("/get_notes_menu_category/:branch_id", syncHandler.GetNotesMenuCategory)
+	syncRouter.GET("/get_notes_menu_sub_category/:branch_id", syncHandler.GetNotesMenuSubCategory)
+	syncRouter.GET("/get_notes_menu_detail/:branch_id", syncHandler.GetNotesMenuDetail)
 
 	////////////////
 

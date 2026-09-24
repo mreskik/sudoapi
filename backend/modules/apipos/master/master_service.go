@@ -908,3 +908,85 @@ FROM master_menu`).Scan(context, &data)
 	}
 	return data, nil
 }
+
+// /////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
+
+// GetMasterNotesMenu -- header, difilter flag_active + branch (SAMA POLA GetMasterPromo()):
+// keluar kalau flag_all_branch = true ATAU ada baris master_notes_menu_branches buat branch
+// ini. POS gak nerima flag_all_branch/flag_active sendiri (lihat MasterNotesMenu) -- baris ini
+// nyampe ke POS artinya UDAH PASTI aktif & berlaku buat branch itu, gak perlu field tambahan.
+func (this *MasterService) GetMasterNotesMenu(context context.Context, branch_id int) ([]MasterNotesMenu, error) {
+	data := []MasterNotesMenu{}
+	err := this.DB.NewRaw(`
+SELECT
+mnm.id,
+mnm.name,
+mnm.applies_to,
+mnm.created_at,
+mnm.created_by,
+mnm.updated_at,
+mnm.updated_by
+FROM master_notes_menu mnm
+LEFT JOIN master_notes_menu_branches mnb ON mnb.master_notes_menu_id = mnm.id AND mnb.branch_id = ?
+WHERE mnm.flag_active = true AND (mnm.flag_all_branch = true OR mnb.id IS NOT NULL)`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+// GetMasterNotesMenuCategories -- JOIN balik ke header + LEFT JOIN branches (sama pola
+// GetMasterPromoVisitPurposes()) biar categories yang kepull cuma punya notes menu yang emang
+// relevan buat branch ini (aktif + all_branch/match branch).
+func (this *MasterService) GetMasterNotesMenuCategories(context context.Context, branch_id int) ([]MasterNotesMenuCategories, error) {
+	data := []MasterNotesMenuCategories{}
+	err := this.DB.NewRaw(`
+SELECT
+mnc.id,
+mnc.master_notes_menu_id AS notes_menu_id,
+mnc.category_id
+FROM master_notes_menu_categories mnc
+JOIN master_notes_menu mnm ON mnm.id = mnc.master_notes_menu_id
+LEFT JOIN master_notes_menu_branches mnb ON mnb.master_notes_menu_id = mnm.id AND mnb.branch_id = ?
+WHERE mnm.flag_active = true AND (mnm.flag_all_branch = true OR mnb.id IS NOT NULL)`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterNotesMenuSubCategories(context context.Context, branch_id int) ([]MasterNotesMenuSubCategories, error) {
+	data := []MasterNotesMenuSubCategories{}
+	err := this.DB.NewRaw(`
+SELECT
+mns.id,
+mns.master_notes_menu_id AS notes_menu_id,
+mns.sub_category_id
+FROM master_notes_menu_subcategories mns
+JOIN master_notes_menu mnm ON mnm.id = mns.master_notes_menu_id
+LEFT JOIN master_notes_menu_branches mnb ON mnb.master_notes_menu_id = mnm.id AND mnb.branch_id = ?
+WHERE mnm.flag_active = true AND (mnm.flag_all_branch = true OR mnb.id IS NOT NULL)`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterNotesMenuDetail(context context.Context, branch_id int) ([]MasterNotesMenuDetail, error) {
+	data := []MasterNotesMenuDetail{}
+	err := this.DB.NewRaw(`
+SELECT
+mnd.id,
+mnd.master_notes_menu_id AS notes_menu_id,
+mnd.short_notes,
+mnd.full_notes
+FROM master_notes_menu_detail mnd
+JOIN master_notes_menu mnm ON mnm.id = mnd.master_notes_menu_id
+LEFT JOIN master_notes_menu_branches mnb ON mnb.master_notes_menu_id = mnm.id AND mnb.branch_id = ?
+WHERE mnm.flag_active = true AND (mnm.flag_all_branch = true OR mnb.id IS NOT NULL)`, branch_id).Scan(context, &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}

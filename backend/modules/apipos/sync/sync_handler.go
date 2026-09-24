@@ -650,3 +650,63 @@ func (h *SyncHandler) GetMemberList(c *gin.Context) {
 	}
 	c.JSON(200, res.Success().SetData(data))
 }
+
+func (h *SyncHandler) GetNotesMenuList(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterNotesMenu(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetNotesMenuCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterNotesMenuCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu category!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetNotesMenuSubCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterNotesMenuSubCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu sub category!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (h *SyncHandler) GetNotesMenuDetail(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterNotesMenuDetail(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu detail!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}

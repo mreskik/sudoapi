@@ -1268,3 +1268,123 @@ func (this *SetupHandler) GetMenuApp(c *gin.Context) {
 
 	c.JSON(200, res.Success().SetData(data_tax))
 }
+
+func (this *SetupHandler) GetNotesMenuList(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterNotesMenu(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetNotesMenuCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterNotesMenuCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu category!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetNotesMenuSubCategory(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterNotesMenuSubCategories(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu sub category!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}
+
+func (this *SetupHandler) GetNotesMenuDetail(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+
+	data, err := this.masterService.GetMasterNotesMenuDetail(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data notes menu detail!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data))
+}

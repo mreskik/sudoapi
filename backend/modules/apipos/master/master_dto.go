@@ -428,3 +428,40 @@ type MasterMember struct {
 	UpdatedAt    *time.Time `bun:"updated_at" json:"updated_at,omitempty"`
 	UpdatedBy    *int       `bun:"updated_by" json:"updated_by,omitempty"`
 }
+
+// /////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
+
+// MasterNotesMenu -- struct pull buat POS (mr_notes_menu). SENGAJA gak ada FlagAllBranch/
+// IsActive/Branches -- filter udah kelar di query (WHERE flag_active = true dan
+// (flag_all_branch = true or ada baris branch match), lihat GetMasterNotesMenu()), jadi POS
+// gak butuh field itu buat logic apa pun (beda dari MasterPromo yang masih nyimpen field-field
+// itu apa adanya walau POS gak pernah baca -- keputusan sesi 2026-09-24, sengaja gak niru itu).
+type MasterNotesMenu struct {
+	ID        int        `bun:"id" json:"id"`
+	Name      string     `bun:"name" json:"name"`
+	AppliesTo string     `bun:"applies_to" json:"applies_to"` // all_category, category, sub_category
+	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
+	CreatedBy *int       `bun:"created_by" json:"created_by,omitempty"`
+	UpdatedAt *time.Time `bun:"updated_at" json:"updated_at,omitempty"`
+	UpdatedBy *int       `bun:"updated_by" json:"updated_by,omitempty"`
+}
+
+type MasterNotesMenuCategories struct {
+	ID          int `bun:"id" json:"id"`
+	NotesMenuID int `bun:"notes_menu_id" json:"notes_menu_id"`
+	CategoryID  int `bun:"category_id" json:"category_id"`
+}
+
+type MasterNotesMenuSubCategories struct {
+	ID            int `bun:"id" json:"id"`
+	NotesMenuID   int `bun:"notes_menu_id" json:"notes_menu_id"`
+	SubCategoryID int `bun:"sub_category_id" json:"sub_category_id"`
+}
+
+type MasterNotesMenuDetail struct {
+	ID          int    `bun:"id" json:"id"`
+	NotesMenuID int    `bun:"notes_menu_id" json:"notes_menu_id"`
+	ShortNotes  string `bun:"short_notes" json:"short_notes"`
+	FullNotes   string `bun:"full_notes" json:"full_notes,omitempty"`
+}

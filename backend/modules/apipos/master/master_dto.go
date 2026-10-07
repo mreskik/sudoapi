@@ -36,6 +36,11 @@ type BranchData struct {
 	Token          string `bun:"token"`
 	LogoHeaderSrc  string `bun:"logo_header_src" json:"LogoHeaderSrc"`
 	ImageFooterSrc string `bun:"image_footer_src" json:"ImageFooterSrc"`
+	// DomainReceipt/WhatsappTemplateText (2026-09-25, migration 228 sudocore2) -- dari
+	// master_branch_setting (LEFT JOIN, baris setting bisa aja belum ada), bukan master_branch
+	// langsung. CRUD+sync doang buat sekarang, penggunaan belum digarap.
+	DomainReceipt        string `bun:"domain_receipt"`
+	WhatsappTemplateText string `bun:"whatsapp_template_text"`
 }
 
 type Station struct {
@@ -324,6 +329,11 @@ type MasterPromo struct {
 	FlagAllBranches      bool `bun:"flag_all_branches" json:"flag_all_branches"`
 	FlagAllVisitPurposes bool `bun:"flag_all_visit_purposes" json:"flag_all_visit_purposes"`
 	FlagAllTypeMembers   bool `bun:"flag_all_type_members" json:"flag_all_type_members"`
+	// FlagAllTiers/FlagRequiredMember (2026-09-30, migration sudocore2 233/234) -- WAJIB selaras
+	// sama master_dto.go sudomobile & promo_model.go sudocore2, kalau ketinggalan di salah satu
+	// sisi field-nya ke-drop diam-diam pas sync (sama pola bug lama shift_number).
+	FlagAllTiers       bool `bun:"flag_all_tiers" json:"flag_all_tiers"`
+	FlagRequiredMember bool `bun:"flag_required_member" json:"flag_required_member"`
 
 	FlagAllDays  bool `bun:"flag_all_days" json:"flag_all_days"`
 	FlagAllTimes bool `bun:"flag_all_times" json:"flag_all_times"`
@@ -364,6 +374,15 @@ type MasterPromoTypeMembers struct {
 	ID           int `bun:"id" json:"id"`
 	PromoID      int `bun:"promo_id" json:"promo_id"`
 	TypeMemberID int `bun:"type_member_id" json:"type_member_id"`
+}
+
+// MasterPromoTier (2026-09-30) -- pull buat POS, mirror MasterPromoTypeMembers. tier_level
+// (BUKAN tier_id) -- konsisten sama master_promo_tier ERP (migration 233), tier gak punya PK
+// surrogate `id`, level-nya sendiri identitasnya.
+type MasterPromoTier struct {
+	ID        int `bun:"id" json:"id"`
+	PromoID   int `bun:"promo_id" json:"promo_id"`
+	TierLevel int `bun:"tier_level" json:"tier_level"`
 }
 
 type MasterPromoCategories struct {
@@ -422,7 +441,11 @@ type MasterMember struct {
 	ContactName  string     `bun:"contact_name" json:"contact_name,omitempty"`
 	Email        string     `bun:"email" json:"email,omitempty"`
 	PhoneNumber  string     `bun:"phone_number" json:"phone_number,omitempty"`
-	IsActive     bool       `bun:"is_active" json:"is_active"`
+	// TierLevel (2026-09-30) -- dihitung otomatis oleh job membertierevaluation (sudocore2,
+	// jalan 1x/hari), BUKAN input manual. Disinkronkan ke POS lokal biar barrier tier promo
+	// (master_promo_tier) bisa ditegakkan juga di kasir -- lihat migration 233/234.
+	TierLevel int        `bun:"tier_level" json:"tier_level"`
+	IsActive  bool        `bun:"is_active" json:"is_active"`
 	CreatedAt    time.Time  `bun:"created_at" json:"created_at"`
 	CreatedBy    *int       `bun:"created_by" json:"created_by,omitempty"`
 	UpdatedAt    *time.Time `bun:"updated_at" json:"updated_at,omitempty"`

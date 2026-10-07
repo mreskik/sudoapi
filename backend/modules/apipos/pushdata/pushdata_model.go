@@ -57,6 +57,12 @@ type PosOrderModel struct {
 	TotalTax      string `bun:"total_tax,type:numeric(20,2)" json:"total_tax"`
 	TotalBilling  string `bun:"total_billing,type:numeric(20,2)" json:"total_billing"`
 
+	// RoundingAmount (migration 230 sudocore2, 2026-09-30) -- WAJIB selaras sama pos_model.go
+	// sudocore2 (tabel pos_order yang SAMA) -- kalau field ketinggalan di salah satu sisi,
+	// data ke-drop diam-diam pas ShouldBindJSON, sama kasus lama chasier_name/
+	// customer_phone_number (lihat DOKUMENTASI API/SYNC/SYNC PUSH.md posv1-laravel).
+	RoundingAmount string `bun:"rounding_amount,type:numeric(20,2)" json:"rounding_amount"`
+
 	FlagInclusiveTax *bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
 	CancelNotes *string    `bun:"cancel_notes" json:"cancel_notes"`
@@ -211,11 +217,25 @@ type PosOrderPaymentModel struct {
 
 	VoucherCode *string `bun:"voucher_code" json:"voucher_code"`
 
-	CardNumber *string `bun:"card_number" json:"card_number"`
-	BankName   *string `bun:"bank_name" json:"bank_name"`
+	// Info (migration 229 sudocore2, 2026-09-30) -- GANTI 4 kolom terpisah (card_number/
+	// bank_name/account_name/verification_code) yang sebelumnya di sini, WAJIB selaras sama
+	// pos_model.go sudocore2 (tabel pos_order_payment yang SAMA) -- kalau field ketinggalan
+	// di salah satu sisi, data ke-drop diam-diam pas ShouldBindJSON, sama kasus lama
+	// chasier_name/customer_phone_number (lihat DOKUMENTASI API/SYNC/SYNC PUSH.md posv1-laravel).
+	Info *string `bun:"info" json:"info"`
 
-	AccountName      *string `bun:"account_name" json:"account_name"`
-	VerificationCode *string `bun:"verification_code" json:"verification_code"`
+	// DeductMemberId (migration sudocore2 240 + POS Laravel 2026_10_01_000000, 2026-10-01) --
+	// SNAPSHOT id member yang saldonya kepotong buat baris payment ini (method "Bayar pakai
+	// Saldo"/wallet), NULL buat payment method lain. WAJIB selaras sama pos_model.go sudocore2
+	// (tabel pos_order_payment yang SAMA) -- kalau field ketinggalan di salah satu sisi, data
+	// ke-drop diam-diam pas ShouldBindJSON, sama kasus lama chasier_name/shift_number.
+	DeductMemberId *int64 `bun:"deduct_member_id" json:"deduct_member_id"`
+
+	// MdrAmount (migration sudocore2 242 + POS Laravel 2026_10_01_010000, 2026-10-01) --
+	// SNAPSHOT nominal biaya MDR, dihitung di POS (PaymentServices::calculateMdrAmount()) saat
+	// payment dibuat, CUMA informasi -- TIDAK ada jurnal/posting akuntansi yang nyentuh nilai
+	// ini. WAJIB selaras sama pos_model.go sudocore2 (tabel pos_order_payment yang SAMA).
+	MdrAmount string `bun:"mdr_amount,type:numeric(20,2)" json:"mdr_amount"`
 
 	CreatedAt *time.Time `bun:"created_at" json:"created_at"`
 	UpdatedAt *time.Time `bun:"updated_at" json:"updated_at"`

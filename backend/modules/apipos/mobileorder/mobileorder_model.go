@@ -111,4 +111,16 @@ type PendingOrderPayment struct {
 	VoucherCode           *string `bun:"voucher_code" json:"voucher_code"`
 	PercentFromBilling    float64 `bun:"percent_from_billing" json:"percent_from_billing"`
 	PaymentGatewayOrderID *string `bun:"payment_gateway_order_id" json:"payment_gateway_order_id"`
+	// DeductMemberId (migration sudocore2 241, 2026-10-01) -- SNAPSHOT id member yang saldonya
+	// kepotong buat payment ini (method "Bayar pakai Saldo"/wallet), NULL buat payment method
+	// lain. WAJIB ikut di-SELECT eksplisit di GetPending() (mobileorder_service.go) & di-pass ke
+	// TrOrderPaymentModel::insert() POS (MobileOrderPullServices.php) -- field yang ketinggalan
+	// di salah satu titik bikin data ke-drop diam-diam.
+	DeductMemberID *int64 `bun:"deduct_member_id" json:"deduct_member_id"`
+	// MdrAmount (migration sudocore2 242, 2026-10-01) -- SNAPSHOT nominal biaya MDR, dihitung
+	// di sudomobile saat payment dibuat, CUMA informasi -- TIDAK ada jurnal/posting akuntansi
+	// yang nyentuh nilai ini. WAJIB ikut di-SELECT eksplisit di GetPending()
+	// (mobileorder_service.go) & di-pass ke TrOrderPaymentModel::insert() POS
+	// (MobileOrderPullServices.php), sama pola kayak DeductMemberID.
+	MdrAmount float64 `bun:"mdr_amount" json:"mdr_amount"`
 }

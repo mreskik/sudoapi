@@ -531,6 +531,21 @@ func (h *SyncHandler) GetPromoTypeMember(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
+func (h *SyncHandler) GetPromoTier(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		return
+	}
+	data, err := h.masterService.GetMasterPromoTier(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data promo tier!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (h *SyncHandler) GetPromoCategory(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)

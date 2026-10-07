@@ -73,10 +73,13 @@ mb.printing_footer,
 mb.company_id,
 mb.token,
 COALESCE(mb.logo_header_src, '') as logo_header_src,
-COALESCE(mb.image_footer_src, '') as image_footer_src
+COALESCE(mb.image_footer_src, '') as image_footer_src,
+COALESCE(mbs.domain_receipt, '') as domain_receipt,
+COALESCE(mbs.whatsapp_template_text, '') as whatsapp_template_text
 
-FROM master_branch mb 
+FROM master_branch mb
 JOIN master_brand mbd on mbd.id = mb.brand_id
+LEFT JOIN master_branch_setting mbs on mbs.branch_id = mb.id
 
 WHERE mb.id = ?
  `, branch_id).Scan(context, &BranchData)
@@ -684,6 +687,8 @@ mp.period_end,
 mp.flag_all_branches,
 mp.flag_all_visit_purposes,
 mp.flag_all_type_members,
+mp.flag_all_tiers,
+mp.flag_required_member,
 mp.flag_all_days,
 mp.flag_all_times,
 mp.flag_apply_to_all,
@@ -744,6 +749,23 @@ mptm.promo_id,
 mptm.type_member_id
 FROM master_promo_type_members mptm
 JOIN master_promo mp on mp.id = mptm.promo_id
+LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
+WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+func (this *MasterService) GetMasterPromoTier(context context.Context, branch_id int) ([]MasterPromoTier, error) {
+	data := []MasterPromoTier{}
+	err := this.DB.NewRaw(`SELECT
+mptr.id,
+mptr.promo_id,
+mptr.tier_level
+FROM master_promo_tier mptr
+JOIN master_promo mp on mp.id = mptr.promo_id
 LEFT JOIN master_promo_branches mpb on mpb.promo_id = mp.id and mpb.branch_id = ?
 WHERE mp.is_active = true and (mp.flag_all_branches = true or mpb.id is not null)`, branch_id).Scan(context, &data)
 
@@ -883,6 +905,7 @@ name,
 contact_name,
 email,
 phone_number,
+tier_level,
 is_active,
 created_at,
 created_by,

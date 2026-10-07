@@ -73,7 +73,7 @@ func GetPending(ctx context.Context, db *bun.DB, branchID int64) ([]PendingOrder
 	if len(paymentNumbers) > 0 {
 		if err := db.NewRaw(`
 			SELECT ulid, payment_number, payment_method_id, payment_amount, voucher_code,
-				percent_from_billing, payment_gateway_order_id
+				percent_from_billing, payment_gateway_order_id, deduct_member_id, mdr_amount
 			FROM mb_order_payment
 			WHERE payment_number IN (?)
 		`, bun.In(paymentNumbers)).Scan(ctx, &payments); err != nil {

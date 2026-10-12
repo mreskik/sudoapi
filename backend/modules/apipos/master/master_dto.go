@@ -22,11 +22,22 @@ type Branch struct {
 }
 
 type BranchData struct {
-	BranchID       int    `bun:"branch_id"`
-	BranchCode     string `bun:"branch_code"`
-	BranchName     string `bun:"branch_name"`
+	BranchID   int    `bun:"branch_id"`
+	BranchCode string `bun:"branch_code"`
+	BranchName string `bun:"branch_name"`
+	// BrandID (2026-10-12) -- master_branch.brand_id, NULLABLE (branch bisa aja belum di-assign
+	// brand). Pointer biar aman di-scan kalau NULL -- BEDA dari BrandCode/BrandName/warna di
+	// bawah yang udah di-COALESCE jadi string kosong di level SQL (field situ histori lama,
+	// disamain polanya biar gak break existing consumer kalau brand_id sendiri yang NULL).
+	BrandID        *int   `bun:"brand_id"`
 	BrandCode      string `bun:"brand_code"`
 	BrandName      string `bun:"brand_name"`
+	// BrandColor/PrimaryColor/SecondaryColor (2026-10-12, migration sudocore2 263) -- 3 warna
+	// brand, dari master_brand (LEFT JOIN, lihat catatan GetDataBranch()). String kosong kalau
+	// branch gak punya brand_id ATAU brand-nya belum diisi warna.
+	BrandColor     string `bun:"brand_color"`
+	PrimaryColor   string `bun:"primary_color"`
+	SecondaryColor string `bun:"secondary_color"`
 	Address        string `bun:"address"`
 	Phone          string `bun:"phone"`
 	PrintingHeader string `bun:"printing_header"`

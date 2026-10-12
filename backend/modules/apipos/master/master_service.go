@@ -58,14 +58,22 @@ FROM
 func (this *MasterService) GetDataBranch(context context.Context, branch_id int) (BranchData, error) {
 	BranchData := BranchData{}
 
+	// JOIN master_brand (2026-10-12): di-ubah dari INNER JOIN jadi LEFT JOIN -- branch yang
+	// brand_id-nya NULL/gak match baris master_brand manapun TETAP harus bisa ke-pull (data
+	// branch lain tetap lengkap, field brand_* doang yang kosong), bukan GAGAL TOTAL kayak
+	// sebelumnya (INNER JOIN bikin seluruh baris branch ilang kalau brand_id-nya gak match).
 	err := this.DB.NewRaw(`
  SELECT
 
 mb.id as branch_id,
 mb.code as branch_code,
 mb.name as branch_name,
-mbd.code as brand_code,
-mbd.name as brand_name,
+mb.brand_id as brand_id,
+COALESCE(mbd.code, '') as brand_code,
+COALESCE(mbd.name, '') as brand_name,
+COALESCE(mbd.brand_color, '') as brand_color,
+COALESCE(mbd.primary_color, '') as primary_color,
+COALESCE(mbd.secondary_color, '') as secondary_color,
 mb.address as address,
 mb.telp as phone,
 mb.printing_header,
@@ -78,7 +86,7 @@ COALESCE(mbs.domain_receipt, '') as domain_receipt,
 COALESCE(mbs.whatsapp_template_text, '') as whatsapp_template_text
 
 FROM master_branch mb
-JOIN master_brand mbd on mbd.id = mb.brand_id
+LEFT JOIN master_brand mbd on mbd.id = mb.brand_id
 LEFT JOIN master_branch_setting mbs on mbs.branch_id = mb.id
 
 WHERE mb.id = ?

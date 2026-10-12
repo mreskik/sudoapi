@@ -11,6 +11,7 @@ import (
 	"APIANDORDER/backend/modules/apipos/mobileorder"
 	"APIANDORDER/backend/modules/apipos/pushdata"
 	"APIANDORDER/backend/modules/apipos/setup"
+	"APIANDORDER/backend/modules/apipos/soldout"
 	"APIANDORDER/backend/modules/apipos/sync"
 	"net/http"
 
@@ -161,6 +162,12 @@ func Register(app *gin.Engine) {
 	pushRouter.POST("/data_dayshift_detail", pushHandler.PushDataPosDayShiftDetail)
 	pushRouter.POST("/data_remove_item_before_save", pushHandler.PushDataPosRemoveItemBeforeSave)
 	pushRouter.POST("/data_remove_item_before_save_package", pushHandler.PushDataPosRemoveItemBeforeSavePackage)
+
+	// SOLD OUT -- tombol manual di POS (bukan auto-terjadwal), replace penuh snapshot item_id
+	// sold out per branch di master_item_sold_out (sudocore2, migration 264). Dikonsumsi
+	// sudomobile. Sama pola auth kayak push lain di atas (tanpa BranchTokenAuth).
+	soldOutHandler := soldout.NewHandler(config.DB)
+	pushRouter.POST("/sold_out", soldOutHandler.PushSoldOut)
 
 	// ENDDAY JURNAL & REVERT -- token-based auth (sama kayak syncRouter), token diteruskan ke
 	// sudocore2 biar divalidasi ulang di sana juga (lihat backend/modules/apipos/endday).

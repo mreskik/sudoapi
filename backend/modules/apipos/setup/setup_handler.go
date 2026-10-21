@@ -49,7 +49,7 @@ func (this *SetupHandler) GetDataBranch(c *gin.Context) {
 		c.JSON(200, res.GeneralError())
 		return
 	}
-	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	login_status, user_id, _ := this.setupService.CekLogin(c, login.Username, login.Password)
 	if !login_status {
 		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
 		return
@@ -61,7 +61,7 @@ func (this *SetupHandler) GetDataBranch(c *gin.Context) {
 		return
 	}
 
-	branch_data, err := this.masterService.GetDataBranch(c, branch_id)
+	branch_data, err := this.masterService.GetDataBranchForInstall(c, branch_id, int64(user_id), login.DeviceHostname)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("error get data branch!"))
 		return
@@ -483,6 +483,36 @@ func (this *SetupHandler) GetPriceListDetail(c *gin.Context) {
 	data_tax, err := this.masterService.GetPriceListDetail(c, branch_id)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data  pricelist detail!"))
+		return
+	}
+
+	c.JSON(200, res.Success().SetData(data_tax))
+}
+
+func (this *SetupHandler) GetPriceListSubCategorySequence(c *gin.Context) {
+	res := helpers.NewResponse()
+
+	var login Login
+	err := c.ShouldBindJSON(&login)
+	if err != nil {
+		c.JSON(200, res.GeneralError())
+		return
+	}
+	login_status, _, _ := this.setupService.CekLogin(c, login.Username, login.Password)
+	if !login_status {
+		c.JSON(200, res.GeneralError().SetMessage("username or password is incorrect!"))
+		return
+	}
+
+	branch_id, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("invalid branch_id!"))
+		return
+	}
+
+	data_tax, err := this.masterService.GetPriceListSubCategorySequence(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data  pricelist sub category sequence!"))
 		return
 	}
 

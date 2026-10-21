@@ -30,6 +30,13 @@ func (h *Handler) Ping(c *gin.Context) {
 		c.JSON(http.StatusOK, res.GeneralError().SetMessage("branch_id salah"))
 		return
 	}
+	// cross-check branch_id (path) vs token (2026-10-16, audit keamanan) -- tanpa ini device
+	// branch A bisa upsert last_ping_at buat branch manapun, memalsukan status online/offline
+	// branch lain (dipakai sudomobile buat barrier order).
+	if err := helpers.MatchingBranchID(c, branchID); err != nil {
+		c.JSON(http.StatusOK, res.GeneralError().SetMessage(err.Error()))
+		return
+	}
 
 	_, err = h.DB.NewRaw(`
 		INSERT INTO branch_heartbeat (branch_id, last_ping_at) VALUES (?, now())

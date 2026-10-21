@@ -52,6 +52,7 @@ func Register(app *gin.Engine) {
 
 	setupRouter.POST("/get_pricelist/:branch_id", setupHandler.GetPriceList)
 	setupRouter.POST("/get_pricelist_detail/:branch_id", setupHandler.GetPriceListDetail)
+	setupRouter.POST("/get_pricelist_sub_category_sequence/:branch_id", setupHandler.GetPriceListSubCategorySequence)
 
 	setupRouter.POST("/get_payment_method/:branch_id", setupHandler.GetMasterPaymentMethod)
 	setupRouter.POST("/get_payment_method_group/:branch_id", setupHandler.GetMasterPaymentMethodGroup)
@@ -112,6 +113,7 @@ func Register(app *gin.Engine) {
 
 	syncRouter.GET("/get_pricelist/:branch_id", syncHandler.GetPriceList)
 	syncRouter.GET("/get_pricelist_detail/:branch_id", syncHandler.GetPriceListDetail)
+	syncRouter.GET("/get_pricelist_sub_category_sequence/:branch_id", syncHandler.GetPriceListSubCategorySequence)
 
 	syncRouter.GET("/get_payment_method/:branch_id", syncHandler.GetMasterPaymentMethod)
 	syncRouter.GET("/get_payment_method_group/:branch_id", syncHandler.GetMasterPaymentMethodGroup)
@@ -151,8 +153,13 @@ func Register(app *gin.Engine) {
 
 	////////////////
 
+	// PUSH -- token-based auth (BranchTokenAuth, 2026-10-16) -- sebelumnya endpoint ini TANPA
+	// otentikasi apapun (siapa pun yang tau URL bisa kirim data order/dayshift/payment palsu
+	// buat branch_id manapun). Tiap handler JUGA cross-check branch_id di body cocok sama
+	// branch_id hasil lookup token (c.Get("pos_branch_id")) -- token valid doang gak cukup,
+	// device branch A gak boleh nyuntik data branch B meski somehow tau token A.
 	pushHandler := pushdata.NewHander(config.DB)
-	pushRouter := router.Group("/push")
+	pushRouter := router.Group("/push", middleware.BranchTokenAuth(config.DB))
 
 	pushRouter.POST("/data_order", pushHandler.PushDataPosOrder)
 	pushRouter.POST("/data_order_detail", pushHandler.PushDataPosOrderDetail)
@@ -165,7 +172,7 @@ func Register(app *gin.Engine) {
 
 	// SOLD OUT -- tombol manual di POS (bukan auto-terjadwal), replace penuh snapshot item_id
 	// sold out per branch di master_item_sold_out (sudocore2, migration 264). Dikonsumsi
-	// sudomobile. Sama pola auth kayak push lain di atas (tanpa BranchTokenAuth).
+	// sudomobile. Ikut pushRouter (BranchTokenAuth), sama kayak push lain di atas.
 	soldOutHandler := soldout.NewHandler(config.DB)
 	pushRouter.POST("/sold_out", soldOutHandler.PushSoldOut)
 

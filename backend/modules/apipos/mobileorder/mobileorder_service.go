@@ -122,3 +122,14 @@ func Ack(ctx context.Context, db *bun.DB, orderNumber string) error {
 	`, orderNumber).Exec(ctx)
 	return err
 }
+
+// GetBranchIDByOrderNumber (2026-10-16, audit keamanan): order_number sendiri gak ngandung
+// info branch, jadi handler Ack() perlu query balik ini DULU buat cross-check branch_id hasil
+// lookup token -- cegah device branch A ack (silently hilangkan dari antrian) order milik
+// branch lain. sql.ErrNoRows kalau order_number gak ketemu -- handler tetap balikin Success
+// (idempotent, konsisten sama perilaku Ack() yang udah ada), BUKAN dianggap sabotase.
+func GetBranchIDByOrderNumber(ctx context.Context, db *bun.DB, orderNumber string) (int64, error) {
+	var branchID int64
+	err := db.NewRaw(`SELECT branch_id FROM mb_order WHERE order_number = ?`, orderNumber).Scan(ctx, &branchID)
+	return branchID, err
+}

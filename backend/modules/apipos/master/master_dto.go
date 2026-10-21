@@ -29,9 +29,9 @@ type BranchData struct {
 	// brand). Pointer biar aman di-scan kalau NULL -- BEDA dari BrandCode/BrandName/warna di
 	// bawah yang udah di-COALESCE jadi string kosong di level SQL (field situ histori lama,
 	// disamain polanya biar gak break existing consumer kalau brand_id sendiri yang NULL).
-	BrandID        *int   `bun:"brand_id"`
-	BrandCode      string `bun:"brand_code"`
-	BrandName      string `bun:"brand_name"`
+	BrandID   *int   `bun:"brand_id"`
+	BrandCode string `bun:"brand_code"`
+	BrandName string `bun:"brand_name"`
 	// BrandColor/PrimaryColor/SecondaryColor (2026-10-12, migration sudocore2 263) -- 3 warna
 	// brand, dari master_brand (LEFT JOIN, lihat catatan GetDataBranch()). String kosong kalau
 	// branch gak punya brand_id ATAU brand-nya belum diisi warna.
@@ -189,6 +189,16 @@ type masterPricelistDetail struct {
 	Price            string `bun:"price" json:"price"`
 	POS              bool   `bun:"pos" json:"pos"`
 	QROrder          bool   `bun:"qr_order" json:"qr_order"`
+}
+
+// MasterPricelistSubCategorySequence -- urutan tampil subcategory per menu template
+// (master_pricelist_sub_category_sequence, sudocore2), ditarik POS bareng pricelist/pricelist
+// detail (2026-10-15).
+type MasterPricelistSubCategorySequence struct {
+	ID            int `bun:"id" json:"id"`
+	PricelistID   int `bun:"pricelist_id" json:"pricelist_id"`
+	SubCategoryID int `bun:"sub_category_id" json:"sub_category_id"`
+	Sequence      int `bun:"sequence" json:"sequence"`
 }
 
 ///
@@ -445,22 +455,22 @@ type MasterMemberType struct {
 }
 
 type MasterMember struct {
-	ID           int        `bun:"id" json:"id"`
-	MemberTypeID *int       `bun:"member_type_id" json:"member_type_id,omitempty"`
-	Code         string     `bun:"code" json:"code"`
-	Name         string     `bun:"name" json:"name"`
-	ContactName  string     `bun:"contact_name" json:"contact_name,omitempty"`
-	Email        string     `bun:"email" json:"email,omitempty"`
-	PhoneNumber  string     `bun:"phone_number" json:"phone_number,omitempty"`
+	ID           int    `bun:"id" json:"id"`
+	MemberTypeID *int   `bun:"member_type_id" json:"member_type_id,omitempty"`
+	Code         string `bun:"code" json:"code"`
+	Name         string `bun:"name" json:"name"`
+	ContactName  string `bun:"contact_name" json:"contact_name,omitempty"`
+	Email        string `bun:"email" json:"email,omitempty"`
+	PhoneNumber  string `bun:"phone_number" json:"phone_number,omitempty"`
 	// TierLevel (2026-09-30) -- dihitung otomatis oleh job membertierevaluation (sudocore2,
 	// jalan 1x/hari), BUKAN input manual. Disinkronkan ke POS lokal biar barrier tier promo
 	// (master_promo_tier) bisa ditegakkan juga di kasir -- lihat migration 233/234.
 	TierLevel int        `bun:"tier_level" json:"tier_level"`
-	IsActive  bool        `bun:"is_active" json:"is_active"`
-	CreatedAt    time.Time  `bun:"created_at" json:"created_at"`
-	CreatedBy    *int       `bun:"created_by" json:"created_by,omitempty"`
-	UpdatedAt    *time.Time `bun:"updated_at" json:"updated_at,omitempty"`
-	UpdatedBy    *int       `bun:"updated_by" json:"updated_by,omitempty"`
+	IsActive  bool       `bun:"is_active" json:"is_active"`
+	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
+	CreatedBy *int       `bun:"created_by" json:"created_by,omitempty"`
+	UpdatedAt *time.Time `bun:"updated_at" json:"updated_at,omitempty"`
+	UpdatedBy *int       `bun:"updated_by" json:"updated_by,omitempty"`
 }
 
 // /////////////////////////////////////////////////////////////////////

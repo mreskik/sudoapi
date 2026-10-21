@@ -35,6 +35,18 @@ func (h *Handler) PushSoldOut(c *gin.Context) {
 		return
 	}
 
+	// cross-check branch_id body sama branch_id hasil lookup token (2026-10-16) -- token valid
+	// doang gak cukup, device branch A gak boleh nyuntik sold out buat branch B.
+	posBranchId, exists := c.Get("pos_branch_id")
+	if !exists {
+		c.JSON(http.StatusOK, res.GeneralError().SetMessage("branch id tidak ditemukan dari token"))
+		return
+	}
+	if tokenBranchId, ok := posBranchId.(int64); !ok || tokenBranchId != req.BranchID {
+		c.JSON(http.StatusOK, res.GeneralError().SetMessage("branch_id tidak cocok dengan token yang dipakai"))
+		return
+	}
+
 	if err := h.Service.PushSoldOut(c, req.BranchID, req.ItemIDs); err != nil {
 		c.JSON(http.StatusOK, res.GeneralError().SetMessage(err.Error()))
 		return

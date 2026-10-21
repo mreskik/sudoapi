@@ -4,6 +4,7 @@ import (
 	"APIANDORDER/backend/helpers"
 	"APIANDORDER/backend/modules/apipos/master"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/uptrace/bun"
@@ -17,18 +18,37 @@ func NewHandler(db *bun.DB) *SyncHandler {
 	return &SyncHandler{masterService: master.NewMasterService(db)}
 }
 
+// parseBranchID (2026-10-16, audit keamanan): parse branch_id dari path DAN cross-check
+// terhadap branch_id hasil lookup token (helpers.MatchingBranchID) -- BranchTokenAuth cuma
+// mastiin token itu VALID/AKTIF, TIDAK mastiin token itu buat branch yang direquest. Tanpa
+// cross-check ini, device branch A yang punya token sah bisa ganti :branch_id di URL jadi
+// branch manapun dan baca data master branch itu (termasuk get_member_list/get_master_user/
+// get_master_role_access yang sensitif). SEMUA 35 fungsi sync_pull di file ini manggil lewat
+// sini, jadi cukup 1 titik perubahan buat nutup celahnya di semuanya sekaligus.
 func parseBranchID(c *gin.Context) (int, error) {
-	return strconv.Atoi(c.Param("branch_id"))
+	branchID, err := strconv.Atoi(c.Param("branch_id"))
+	if err != nil {
+		return 0, err
+	}
+	if err := helpers.MatchingBranchID(c, int64(branchID)); err != nil {
+		return 0, err
+	}
+	return branchID, nil
 }
 
+// GetDataBranch (sync_pull/get_data_branch): TIDAK generate token baru -- token dibalikin apa
+// adanya dari token yang dipakai request ini sendiri (header Authorization, sudah tervalidasi
+// BranchTokenAuth). POS nyimpen Token hasil response ini ke mr_branch.token lokal, jadi WAJIB
+// konsisten dengan token yang device ini emang lagi pakai -- bukan generate/kosong.
 func (h *SyncHandler) GetDataBranch(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
-	data, err := h.masterService.GetDataBranch(c, branch_id)
+	currentToken := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+	data, err := h.masterService.GetDataBranch(c, branch_id, currentToken)
 	if err != nil {
 		c.JSON(200, res.GeneralError().SetMessage("error get data branch!"))
 		return
@@ -40,7 +60,7 @@ func (h *SyncHandler) GetStationList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetStationList(c, branch_id)
@@ -55,7 +75,7 @@ func (h *SyncHandler) GetCategoryList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterCategory(c, branch_id)
@@ -70,7 +90,7 @@ func (h *SyncHandler) GetSubCategoryList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterSubCategory(c, branch_id)
@@ -85,7 +105,7 @@ func (h *SyncHandler) GetTableSectionList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetTableSection(c, branch_id)
@@ -100,7 +120,7 @@ func (h *SyncHandler) GetTable(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetTable(c, branch_id)
@@ -115,7 +135,7 @@ func (h *SyncHandler) GetMasterTax(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterTax(c, branch_id)
@@ -130,7 +150,7 @@ func (h *SyncHandler) GetMasterTerminal(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterTerminal(c, branch_id)
@@ -145,7 +165,7 @@ func (h *SyncHandler) GetItem(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItem(c, branch_id)
@@ -160,7 +180,7 @@ func (h *SyncHandler) GetItemConv(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItemConv(c, branch_id)
@@ -175,7 +195,7 @@ func (h *SyncHandler) GetItemPackage(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItemPackage(c, branch_id)
@@ -190,7 +210,7 @@ func (h *SyncHandler) GetItemPackageGroup(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItemPackageGroup(c, branch_id)
@@ -205,7 +225,7 @@ func (h *SyncHandler) GetItemPackageDetail(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItemPackageDetail(c, branch_id)
@@ -220,7 +240,7 @@ func (h *SyncHandler) GetItemPackageDetailPricelist(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetItemPackageDetailPricelist(c, branch_id)
@@ -235,7 +255,7 @@ func (h *SyncHandler) GetPriceList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetPriceList(c, branch_id)
@@ -250,7 +270,7 @@ func (h *SyncHandler) GetPriceListDetail(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetPriceListDetail(c, branch_id)
@@ -261,11 +281,26 @@ func (h *SyncHandler) GetPriceListDetail(c *gin.Context) {
 	c.JSON(200, res.Success().SetData(data))
 }
 
+func (h *SyncHandler) GetPriceListSubCategorySequence(c *gin.Context) {
+	res := helpers.NewResponse()
+	branch_id, err := parseBranchID(c)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
+		return
+	}
+	data, err := h.masterService.GetPriceListSubCategorySequence(c, branch_id)
+	if err != nil {
+		c.JSON(200, res.GeneralError().SetMessage("gagal ambil data pricelist sub category sequence!"))
+		return
+	}
+	c.JSON(200, res.Success().SetData(data))
+}
+
 func (h *SyncHandler) GetMasterPaymentMethod(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPaymentMethod(c, branch_id)
@@ -280,7 +315,7 @@ func (h *SyncHandler) GetMasterPaymentMethodGroup(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPaymentMethodGroup(c, branch_id)
@@ -295,7 +330,7 @@ func (h *SyncHandler) GetMasterPaymentMethodType(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPaymentMethodType(c, branch_id)
@@ -310,7 +345,7 @@ func (h *SyncHandler) GetMasterPaymentMethodVisitPurposes(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPaymentMethodVisitPurposes(c, branch_id)
@@ -325,7 +360,7 @@ func (h *SyncHandler) GetMasterBranchVisitPurpose(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterBranchVisitPurpose(c, branch_id)
@@ -340,7 +375,7 @@ func (h *SyncHandler) GetMasterBranchOpsSetting(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterBranchOpsSetting(c, branch_id)
@@ -355,7 +390,7 @@ func (h *SyncHandler) GetMasterImage(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterImage(c, branch_id)
@@ -370,7 +405,7 @@ func (h *SyncHandler) GetMasterImageCustomerDisplay(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterImageCustomerDisplay(c, branch_id)
@@ -385,7 +420,7 @@ func (h *SyncHandler) GetMasterImageKiosk(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterImageKiosk(c, branch_id)
@@ -400,7 +435,7 @@ func (h *SyncHandler) GetMasterVisitPurpose(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterVisitPurpose(c, branch_id)
@@ -415,7 +450,7 @@ func (h *SyncHandler) GetMasterTableSectionPrintCategorySetting(c *gin.Context) 
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetTableSectionPrintCategorySetting(c, branch_id)
@@ -430,7 +465,7 @@ func (h *SyncHandler) GetMasterUser(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterUserList(c, branch_id)
@@ -445,7 +480,7 @@ func (h *SyncHandler) GetMasterRoleAccess(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterRoleAccess(c, branch_id)
@@ -460,7 +495,7 @@ func (h *SyncHandler) GetMenuApp(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterMenuApp(c, branch_id)
@@ -475,7 +510,7 @@ func (h *SyncHandler) GetPromoList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromo(c, branch_id)
@@ -490,7 +525,7 @@ func (h *SyncHandler) GetPromoBranch(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoBranches(c, branch_id)
@@ -505,7 +540,7 @@ func (h *SyncHandler) GetPromoVisitPurpose(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoVisitPurposes(c, branch_id)
@@ -520,7 +555,7 @@ func (h *SyncHandler) GetPromoTypeMember(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoTypeMembers(c, branch_id)
@@ -535,7 +570,7 @@ func (h *SyncHandler) GetPromoTier(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoTier(c, branch_id)
@@ -550,7 +585,7 @@ func (h *SyncHandler) GetPromoCategory(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoCategories(c, branch_id)
@@ -565,7 +600,7 @@ func (h *SyncHandler) GetPromoSubCategory(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoSubCategories(c, branch_id)
@@ -580,7 +615,7 @@ func (h *SyncHandler) GetPromoItem(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoItems(c, branch_id)
@@ -595,7 +630,7 @@ func (h *SyncHandler) GetPromoDay(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoDays(c, branch_id)
@@ -610,7 +645,7 @@ func (h *SyncHandler) GetPromoTime(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoTimes(c, branch_id)
@@ -625,7 +660,7 @@ func (h *SyncHandler) GetPromoApplyTo(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterPromoApplyTo(c, branch_id)
@@ -640,7 +675,7 @@ func (h *SyncHandler) GetMemberTypeList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterMemberType(c, branch_id)
@@ -655,7 +690,7 @@ func (h *SyncHandler) GetMemberList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterMember(c, branch_id)
@@ -670,7 +705,7 @@ func (h *SyncHandler) GetNotesMenuList(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterNotesMenu(c, branch_id)
@@ -685,7 +720,7 @@ func (h *SyncHandler) GetNotesMenuCategory(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterNotesMenuCategories(c, branch_id)
@@ -700,7 +735,7 @@ func (h *SyncHandler) GetNotesMenuSubCategory(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterNotesMenuSubCategories(c, branch_id)
@@ -715,7 +750,7 @@ func (h *SyncHandler) GetNotesMenuDetail(c *gin.Context) {
 	res := helpers.NewResponse()
 	branch_id, err := parseBranchID(c)
 	if err != nil {
-		c.JSON(200, res.GeneralError().SetMessage("branch id salah!"))
+		c.JSON(200, res.GeneralError().SetMessage(err.Error()))
 		return
 	}
 	data, err := h.masterService.GetMasterNotesMenuDetail(c, branch_id)

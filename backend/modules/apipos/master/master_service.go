@@ -1,6 +1,7 @@
 package master
 
 import (
+	"APIANDORDER/backend/helpers"
 	"context"
 
 	"github.com/uptrace/bun"
@@ -55,7 +56,11 @@ FROM
 	return branch_list, nil
 }
 
-func (this *MasterService) GetDataBranch(context context.Context, branch_id int) (BranchData, error) {
+// branchDataQuery: SELECT inti data branch (brand, address, printing, dkk) buat GetDataBranch
+// -- TIDAK include token sama sekali, karena sumber token-nya beda tergantung caller (install
+// generate baru, sync rutin pakai token yang request ini sendiri sudah pakai). Lihat
+// GetDataBranch() dan GetDataBranchForInstall() di bawah.
+func (this *MasterService) branchDataQuery(context context.Context, branch_id int) (BranchData, error) {
 	BranchData := BranchData{}
 
 	// JOIN master_brand (2026-10-12): di-ubah dari INNER JOIN jadi LEFT JOIN -- branch yang
@@ -79,7 +84,6 @@ mb.telp as phone,
 mb.printing_header,
 mb.printing_footer,
 mb.company_id,
-mb.token,
 COALESCE(mb.logo_header_src, '') as logo_header_src,
 COALESCE(mb.image_footer_src, '') as image_footer_src,
 COALESCE(mbs.domain_receipt, '') as domain_receipt,
@@ -92,10 +96,57 @@ LEFT JOIN master_branch_setting mbs on mbs.branch_id = mb.id
 WHERE mb.id = ?
  `, branch_id).Scan(context, &BranchData)
 
+	return BranchData, err
+}
+
+// GetDataBranch: dipanggil SYNC RUTIN (sync_pull/get_data_branch, lewat BranchTokenAuth, token
+// header yang SUDAH tervalidasi/dipakai request ini sendiri) -- TIDAK generate token baru, TIDAK
+// insert baris session baru. Token dibalikin APA ADANYA dari token yang dipakai request ini
+// (currentToken, diteruskan dari handler yang baca header Authorization) -- POS (SetupServices::
+// getDatabranch(), shared fungsi install+sync) nyimpen Token hasil response ini ke mr_branch.token
+// lokal, jadi KALAU DIBALIKIN KOSONG bakal NIMPA token valid yang lagi dipakai device itu sendiri.
+func (this *MasterService) GetDataBranch(context context.Context, branch_id int, currentToken string) (BranchData, error) {
+	BranchData, err := this.branchDataQuery(context, branch_id)
 	if err != nil {
 		return BranchData, err
 	}
 
+	BranchData.Token = currentToken
+	return BranchData, nil
+}
+
+// GetDataBranchForInstall: dipanggil SETUP WIZARD (setup/get_data_branch, login username/
+// password) -- device BARU, belum punya token. Generate token baru (2026-10-16, sistem session
+// dinamis multi-device) + insert 1 baris baru ke master_branch_pos_session per panggilan
+// (BUKAN baca master_branch.token statis lagi) -- device_hostname dari body POS, created_by
+// dari userId hasil login (SetupService.CekLogin). master_branch.token LAMA DIBIARKAN ADA di
+// skema (belum dihapus), sekadar gak dipakai lagi di jalur ini.
+func (this *MasterService) GetDataBranchForInstall(context context.Context, branch_id int, userId int64, deviceHostname string) (BranchData, error) {
+	BranchData, err := this.branchDataQuery(context, branch_id)
+	if err != nil {
+		return BranchData, err
+	}
+
+	token, err := helpers.GenerateToken()
+	if err != nil {
+		return BranchData, err
+	}
+
+	session := BranchPosSessionModel{
+		BranchId:   int64(branch_id),
+		Token:      token,
+		FlagActive: true,
+		CreatedBy:  &userId,
+	}
+	if deviceHostname != "" {
+		session.DeviceHostname = &deviceHostname
+	}
+
+	if _, err := this.DB.NewInsert().Model(&session).Exec(context); err != nil {
+		return BranchData, err
+	}
+
+	BranchData.Token = token
 	return BranchData, nil
 }
 
@@ -111,7 +162,9 @@ FROM master_station WHERE branch_id = ? and is_active = true`, branch_id).Scan(c
 	return StationList, nil
 }
 
-// GET DATA CATEGORY FROM BRANCH REFERSE KE COMPANY ID
+// GetMasterCategory: master_item_category sekarang shared/global (company_id dihapus dari
+// tabelnya, sudocore2 migration 269) -- gak ada lagi join ke branch/company, branch_id cuma
+// dipertahankan di signature biar caller gak perlu diubah.
 func (this *MasterService) GetMasterCategory(context context.Context, branch_id int) ([]CategoryDTO, error) {
 	CategoryList := []CategoryDTO{}
 
@@ -122,8 +175,7 @@ func (this *MasterService) GetMasterCategory(context context.Context, branch_id 
 	mic.code,
 	mic.type_category_id
 	from master_item_category mic
-	JOIN (SELECT mb.company_id FROM master_branch mb WHERE mb.id = ?) mbb on mbb.company_id = mic.company_id
-	`, branch_id).Scan(context, &CategoryList)
+	`).Scan(context, &CategoryList)
 
 	if err != nil {
 		return CategoryList, err
@@ -131,6 +183,8 @@ func (this *MasterService) GetMasterCategory(context context.Context, branch_id 
 	return CategoryList, nil
 }
 
+// GetMasterSubCategory: master_item_sub_category sekarang shared/global (company_id dihapus,
+// sudocore2 migration 269).
 func (this *MasterService) GetMasterSubCategory(context context.Context, branch_id int) ([]SubCategoryDTO, error) {
 	data := []SubCategoryDTO{}
 	err := this.DB.NewRaw(`SELECT
@@ -138,8 +192,7 @@ msc.id,
 msc.name,
 COALESCE(msc.icon_src, '') as icon_src,
 COALESCE(msc.banner_src, '') as banner_src
-from master_item_sub_category msc
-JOIN master_branch mb on msc.company_id = mb.company_id AND mb.id = ?`, branch_id).Scan(context, &data)
+from master_item_sub_category msc`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -186,13 +239,12 @@ WHERE mts.branch_id = ? and mts.is_active = true`, branch_id).Scan(context, &dat
 	return data, nil
 }
 
+// GetMasterTax: master_tax sekarang shared/global (company_id dihapus, sudocore2 migration 275).
 func (this *MasterService) GetMasterTax(context context.Context, branch_id int) ([]MasterTax, error) {
 	data := []MasterTax{}
 	err := this.DB.NewRaw(`SELECT
 mt.id, mt.name, mt.rate
-FROM master_tax mt
-JOIN master_branch mb on mb.company_id = mt.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+FROM master_tax mt`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -223,6 +275,7 @@ WHERE branch_id = ?`, branch_id).Scan(context, &data)
 
 //////
 
+// GetItem: master_item sekarang shared/global (company_id dihapus, sudocore2 migration 268).
 func (this *MasterService) GetItem(context context.Context, branch_id int) ([]MasterItem, error) {
 	data := []MasterItem{}
 	err := this.DB.NewRaw(`
@@ -242,9 +295,8 @@ COALESCE(mi.icon_src, '') as icon_src,
 mi.use_tax as tax_type
 
 FROM master_item mi
-JOIN master_branch mb on mb.company_id = mi.company_id
-WHERE mb.id = ? and mi.is_deleted = false and mi.item_type = 'menu'
-	`, branch_id).Scan(context, &data)
+WHERE mi.is_deleted = false and mi.item_type = 'menu'
+	`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -257,9 +309,7 @@ func (this *MasterService) GetItemConv(context context.Context, branch_id int) (
 micd.id,
 micd.item_id
 FROM master_item_conversion_detail micd
-JOIN master_item mi on micd.item_id = mi.id
-JOIN master_branch mb on mb.company_id = mi.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+JOIN master_item mi on micd.item_id = mi.id`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -272,9 +322,7 @@ func (this *MasterService) GetItemPackage(context context.Context, branch_id int
 mip.id,
 mip.item_id
 FROM master_item_package mip
-JOIN master_item mi on mi.id = mip.item_id
-JOIN master_branch mb on mb.company_id = mi.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+JOIN master_item mi on mi.id = mip.item_id`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -292,10 +340,7 @@ mipg.max_qty
 
 FROM master_item_package_group mipg
 JOIN master_item_package mip on mip.id = mipg.item_package_id
-JOIN master_item mi on mi.id = mip.item_id
-JOIN master_branch mb on mb.company_id = mi.company_id
-
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+JOIN master_item mi on mi.id = mip.item_id`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -315,10 +360,7 @@ mipd.default_item
 FROM master_item_package_detail mipd
 JOIN master_item_package_group mipg on mipg.id = mipd.package_group_id
 JOIN master_item_package mip on mip.id = mipg.item_package_id
-JOIN master_item mi on mi.id = mip.item_id
-JOIN master_branch mb on mb.company_id = mi.company_id
-
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+JOIN master_item mi on mi.id = mip.item_id`).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -341,10 +383,7 @@ FROM master_item_package_detail_menu_template mt
 JOIN master_item_package_detail mipd on mipd.id = mt.master_item_package_detail_id
 JOIN master_item_package_group mipg on mipg.id = mipd.package_group_id
 JOIN master_item_package mip on mip.id = mipg.item_package_id
-JOIN master_item mi on mi.id = mip.item_id
-JOIN master_branch mb on mb.company_id = mi.company_id
-
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+JOIN master_item mi on mi.id = mip.item_id`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}
@@ -358,9 +397,7 @@ mp.id,
 mp.name,
 mp.inclusive_price as is_inclusive
 
-FROM master_pricelist mp
-JOIN master_branch mb on mb.company_id = mp.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+FROM master_pricelist mp`).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -378,10 +415,28 @@ mpd.price,
 mpd.pos,
 mpd.qr_order
 
-FROM master_pricelist_detail mpd 
-join master_pricelist mp on mp.id = mpd.menu_template_id
-JOIN master_branch mb on mb.company_id = mp.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+FROM master_pricelist_detail mpd
+join master_pricelist mp on mp.id = mpd.menu_template_id`).Scan(context, &data)
+
+	if err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
+// GetPriceListSubCategorySequence -- urutan tampil subcategory per menu template
+// (master_pricelist_sub_category_sequence), ditarik bareng pricelist/pricelist detail
+// (2026-10-15). Gak difilter branch_id (sama kayak GetPriceList/GetPriceListDetail di atas --
+// menu template sekarang shared/global, lihat MASTER MENU TEMPLATE.md sudocore2).
+func (this *MasterService) GetPriceListSubCategorySequence(context context.Context, branch_id int) ([]MasterPricelistSubCategorySequence, error) {
+	data := []MasterPricelistSubCategorySequence{}
+	err := this.DB.NewRaw(`SELECT
+pscs.id,
+pscs.menu_template_id as pricelist_id,
+pscs.sub_category_id,
+pscs.sequence
+
+FROM master_pricelist_sub_category_sequence pscs`).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -428,9 +483,8 @@ func (this *MasterService) GetMasterPaymentMethodGroup(context context.Context, 
 SELECT
 mpg.id, mpg.name
 FROM master_payment_method_group mpg
-JOIN master_branch mb on mb.company_id = mpg.company_id
-WHERE mb.id = ? and mpg.is_active = TRUE
-`, branch_id).Scan(context, &data)
+WHERE mpg.is_active = TRUE
+`).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -457,9 +511,7 @@ func (this *MasterService) GetMasterPaymentMethodVisitPurposes(context context.C
 mpvp.id,
 mpvp.payment_method_id,
 mpvp.visitpurpose_id as visit_purpose_id
-FROM master_payment_method_visit_purposes mpvp
-JOIN master_branch mb on mb.company_id = mpvp.company_id
-WHERE mb.id = ?`, branch_id).Scan(context, &data)
+FROM master_payment_method_visit_purposes mpvp`).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -555,8 +607,7 @@ func (this *MasterService) GetMasterVisitPurpose(context context.Context, branch
 vp.id,
 vp.name
 FROM master_visit_purpose vp
-JOIN master_branch mb on mb.company_id = vp.company_id
-WHERE mb.id = ? and vp.is_active = true`, branch_id).Scan(context, &data)
+WHERE vp.is_active = true`).Scan(context, &data)
 
 	if err != nil {
 		return data, err

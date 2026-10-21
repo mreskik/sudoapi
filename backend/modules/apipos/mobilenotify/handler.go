@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"APIANDORDER/backend/helpers"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -34,6 +36,13 @@ func (h *Handler) Serve(c *gin.Context) {
 	branchID, err := strconv.Atoi(c.Param("branch_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 100, "message": "branch_id salah"})
+		return
+	}
+	// cross-check branch_id (path) vs token (2026-10-16, audit keamanan) -- tanpa ini device
+	// branch A bisa connect WS buat :branch_id manapun dan terima notifikasi order mobile
+	// real-time milik branch lain.
+	if err := helpers.MatchingBranchID(c, int64(branchID)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": err.Error()})
 		return
 	}
 

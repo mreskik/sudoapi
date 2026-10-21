@@ -243,10 +243,19 @@ func (s *MemberTopupService) createGatewayTopup(c *gin.Context, branchID int64, 
 // scan QR. Begitu settlement confirmed, baru insert ke member_balance_ledger (saldo update).
 // Idempotency guard: kalau status lokal udah 'paid', gak query ulang ke gateway / gak insert
 // ledger dobel.
-func (s *MemberTopupService) CheckStatus(c *gin.Context, referenceNumber string) (*CheckTopupStatusResponseDTO, error) {
+//
+// branchID (2026-10-16, audit keamanan): WAJIB cocok sama topup.BranchID -- handler udah
+// cross-check branchID (path) vs token, tapi tanpa validasi row-level ini device branch A
+// (token sah) masih bisa polling status/saldo/nama+no.HP member topup milik branch LAIN cuma
+// dengan tau/nebak reference_number-nya (reference_number gak ngandung rahasia, formatnya
+// predictable -- lihat generateTopupReference()).
+func (s *MemberTopupService) CheckStatus(c *gin.Context, branchID int64, referenceNumber string) (*CheckTopupStatusResponseDTO, error) {
 	topup := new(MemberTopupOnlineModel)
 	err := s.DB.NewSelect().Model(topup).Where("reference_number = ?", referenceNumber).Scan(c)
 	if err != nil {
+		return nil, errors.New("topup tidak ditemukan")
+	}
+	if topup.BranchID == nil || *topup.BranchID != branchID {
 		return nil, errors.New("topup tidak ditemukan")
 	}
 

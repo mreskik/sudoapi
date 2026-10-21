@@ -2,6 +2,7 @@ package backend
 
 import (
 	"APIANDORDER/backend/modules/apipos"
+	"APIANDORDER/backend/modules/apipos/sessiontracker"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,9 @@ func Router(app *gin.Engine) {
 
 	//apipos router
 	apipos.Register(app)
+
+	// internal routes -- antar-service (sudocore2 -> APIANDORDER), shared secret, bukan BranchTokenAuth
+	sessiontracker.RegisterInternalRoutes(app)
 
 	//index
 	app.GET("/", func(ctx *gin.Context) {

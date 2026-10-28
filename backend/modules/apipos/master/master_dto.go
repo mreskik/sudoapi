@@ -76,6 +76,8 @@ type TableSection struct {
 	MainCheckerStationId     int    `bun:"main_checker_station_id" json:"mainchecker_station_id"`
 	LayoutWidth              int    `bun:"layout_width" json:"layout_width"`
 	LayoutHeight             int    `bun:"layout_height" json:"layout_height"`
+	LayoutX                  int    `bun:"layout_x" json:"layout_x"`
+	LayoutY                  int    `bun:"layout_y" json:"layout_y"`
 	LayoutImageSrc           string `bun:"layout_image_src" json:"layout_image_src"`
 	IsActive                 bool   `bun:"is_active" json:"is_active"`
 	Type                     string `bun:"type" json:"type"`

@@ -74,6 +74,28 @@ type BranchData struct {
 	FlagNotePayment                 bool   `bun:"flag_note_payment"`
 	FlagOnlineServiceMobileCustomer bool   `bun:"flag_online_service_mobile_customer"`
 	FlagBarberService               bool   `bun:"flag_barber_service"`
+	// 16 kolom berikut (2026-11-04) -- master_branch_pos_print_report_setting (sudocore2
+	// migration 323), LEFT JOIN TERPISAH dari master_branch_setting (mbs) di atas, bukan tabel
+	// yang sama -- COALESCE default TRUE (bukan false kayak field mbs di atas), konsisten sama
+	// DEFAULT true kolomnya di ERP. Dikirim FLAT di sini (bukan nested endday/shift kayak JSON
+	// API ERP-nya, master_branch_v2) -- SetupServices::getDatabranch() (POS) baca field-by-field
+	// flat juga, simetris sama pola FlagTimeOutUser dkk di atas.
+	EnddaySalesSummary         bool `bun:"endday_sales_summary"`
+	EnddaySalesTypeSummary     bool `bun:"endday_sales_type_summary"`
+	EnddayOrderSourceSummary   bool `bun:"endday_order_source_summary"`
+	EnddayItemCategorySummary  bool `bun:"endday_item_category_summary"`
+	EnddayStaffSalesSummary    bool `bun:"endday_staff_sales_summary"`
+	EnddayPaymentMethodSummary bool `bun:"endday_payment_method_summary"`
+	EnddayStaffPaymentSummary  bool `bun:"endday_staff_payment_summary"`
+	EnddayCashFlowSummary      bool `bun:"endday_cash_flow_summary"`
+	ShiftSalesSummary          bool `bun:"shift_sales_summary"`
+	ShiftSalesTypeSummary      bool `bun:"shift_sales_type_summary"`
+	ShiftOrderSourceSummary    bool `bun:"shift_order_source_summary"`
+	ShiftItemCategorySummary   bool `bun:"shift_item_category_summary"`
+	ShiftStaffSalesSummary     bool `bun:"shift_staff_sales_summary"`
+	ShiftPaymentMethodSummary  bool `bun:"shift_payment_method_summary"`
+	ShiftStaffPaymentSummary   bool `bun:"shift_staff_payment_summary"`
+	ShiftCashFlowSummary       bool `bun:"shift_cash_flow_summary"`
 }
 
 type Station struct {
@@ -105,6 +127,7 @@ type TableSection struct {
 	Type                     string `bun:"type" json:"type"`
 	CanHold                  bool   `bun:"can_hold" json:"can_hold"`
 	PrintCategorySettingLink *int64 `bun:"print_category_setting_link" json:"print_category_setting_link"`
+	PrintCheckerOn           string `bun:"print_checker_on" json:"print_checker_on"`
 }
 
 type TableSectionTable struct {

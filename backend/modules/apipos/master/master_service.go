@@ -104,11 +104,29 @@ COALESCE(mbs.flag_guest_comment, false) as flag_guest_comment,
 COALESCE(mbs.flag_bill_name, false) as flag_bill_name,
 COALESCE(mbs.flag_note_payment, false) as flag_note_payment,
 COALESCE(mbs.flag_online_service_mobile_customer, false) as flag_online_service_mobile_customer,
-COALESCE(mbs.flag_barber_service, false) as flag_barber_service
+COALESCE(mbs.flag_barber_service, false) as flag_barber_service,
+
+COALESCE(mbprs.endday_sales_summary, true) as endday_sales_summary,
+COALESCE(mbprs.endday_sales_type_summary, true) as endday_sales_type_summary,
+COALESCE(mbprs.endday_order_source_summary, true) as endday_order_source_summary,
+COALESCE(mbprs.endday_item_category_summary, true) as endday_item_category_summary,
+COALESCE(mbprs.endday_staff_sales_summary, true) as endday_staff_sales_summary,
+COALESCE(mbprs.endday_payment_method_summary, true) as endday_payment_method_summary,
+COALESCE(mbprs.endday_staff_payment_summary, true) as endday_staff_payment_summary,
+COALESCE(mbprs.endday_cash_flow_summary, true) as endday_cash_flow_summary,
+COALESCE(mbprs.shift_sales_summary, true) as shift_sales_summary,
+COALESCE(mbprs.shift_sales_type_summary, true) as shift_sales_type_summary,
+COALESCE(mbprs.shift_order_source_summary, true) as shift_order_source_summary,
+COALESCE(mbprs.shift_item_category_summary, true) as shift_item_category_summary,
+COALESCE(mbprs.shift_staff_sales_summary, true) as shift_staff_sales_summary,
+COALESCE(mbprs.shift_payment_method_summary, true) as shift_payment_method_summary,
+COALESCE(mbprs.shift_staff_payment_summary, true) as shift_staff_payment_summary,
+COALESCE(mbprs.shift_cash_flow_summary, true) as shift_cash_flow_summary
 
 FROM master_branch mb
 LEFT JOIN master_brand mbd on mbd.id = mb.brand_id
 LEFT JOIN master_branch_setting mbs on mbs.branch_id = mb.id
+LEFT JOIN master_branch_pos_print_report_setting mbprs on mbprs.branch_id = mb.id
 
 WHERE mb.id = ?
  `, branch_id).Scan(context, &BranchData)
@@ -220,7 +238,7 @@ func (this *MasterService) GetTableSection(context context.Context, branch_id in
 	data := []TableSection{}
 
 	err := this.DB.NewRaw(`SELECT
-id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_x,layout_y,layout_image_src,is_active, type, can_hold, print_category_setting_link
+id,branch_id,name,table_checker_station_id,main_checker_station_id,layout_width,layout_height,layout_x,layout_y,layout_image_src,is_active, type, can_hold, print_category_setting_link, print_checker_on
 FROM master_table_section WHERE branch_id = ?`, branch_id).Scan(context, &data)
 
 	if err != nil {

@@ -52,6 +52,28 @@ type BranchData struct {
 	// langsung. CRUD+sync doang buat sekarang, penggunaan belum digarap.
 	DomainReceipt        string `bun:"domain_receipt"`
 	WhatsappTemplateText string `bun:"whatsapp_template_text"`
+	// 17 kolom berikut (2026-11-03) -- sisa kolom master_branch_setting yang BELUM ditarik
+	// sebelumnya (cuma DomainReceipt/WhatsappTemplateText di atas), ditambahkan biar
+	// get_data_branch 1:1 sama skema ERP. Semua di-COALESCE di query (branchDataQuery) biar
+	// aman kalau baris master_branch_setting belum ada (LEFT JOIN, branch yang belum pernah
+	// diisi setting apa pun) -- NotificationEnd dicast ::text di query karena kolomnya `time`.
+	FlagTimeOutUser                 bool   `bun:"flag_time_out_user"`
+	TimeOutSecond                   int64  `bun:"time_out_second"`
+	FlagRounding                    bool   `bun:"flag_rounding"`
+	RoundingMode                    string `bun:"rounding_mode"`
+	RoundingNearstValue             string `bun:"rounding_nearst_value"`
+	FlagEmailReportEndday           bool   `bun:"flag_email_report_endday"`
+	EmailReportEndday               string `bun:"email_report_endday"`
+	FlagNotificationEnd             bool   `bun:"flag_notification_end"`
+	NotificationEnd                 string `bun:"notification_end"`
+	FlagQueue                       bool   `bun:"flag_queue"`
+	QueueResetAfterEach             int64  `bun:"queue_reset_after_each"`
+	QueueStartFrom                  int64  `bun:"queue_start_from"`
+	FlagGuestComment                bool   `bun:"flag_guest_comment"`
+	FlagBillName                    bool   `bun:"flag_bill_name"`
+	FlagNotePayment                 bool   `bun:"flag_note_payment"`
+	FlagOnlineServiceMobileCustomer bool   `bun:"flag_online_service_mobile_customer"`
+	FlagBarberService               bool   `bun:"flag_barber_service"`
 }
 
 type Station struct {

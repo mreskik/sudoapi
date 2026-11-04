@@ -187,6 +187,8 @@ func Register(app *gin.Engine) {
 	memberRouter := router.Group("/member", middleware.BranchTokenAuth(config.DB))
 	memberHandler := member.NewHandler(config.DB)
 	memberRouter.GET("/:branch_id/by-phone/:phone_number", memberHandler.CheckByPhone)
+	memberRouter.GET("/:branch_id/detail/:member_id", memberHandler.GetDetail)
+	memberRouter.POST("/:branch_id", memberHandler.CreateMember)
 
 	// MEMBER TOPUP -- live, real-time, dari channel online (pos/kiosk/mobile), token-based
 	// auth sama kayak member/endday. Lihat backend/modules/apipos/membertopup.

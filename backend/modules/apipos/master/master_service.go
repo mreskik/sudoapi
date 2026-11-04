@@ -87,7 +87,24 @@ mb.company_id,
 COALESCE(mb.logo_header_src, '') as logo_header_src,
 COALESCE(mb.image_footer_src, '') as image_footer_src,
 COALESCE(mbs.domain_receipt, '') as domain_receipt,
-COALESCE(mbs.whatsapp_template_text, '') as whatsapp_template_text
+COALESCE(mbs.whatsapp_template_text, '') as whatsapp_template_text,
+COALESCE(mbs.flag_time_out_user, false) as flag_time_out_user,
+COALESCE(mbs.time_out_second, 0) as time_out_second,
+COALESCE(mbs.flag_rounding, false) as flag_rounding,
+COALESCE(mbs.rounding_mode, '') as rounding_mode,
+COALESCE(mbs.rounding_nearst_value, 0) as rounding_nearst_value,
+COALESCE(mbs.flag_email_report_endday, false) as flag_email_report_endday,
+COALESCE(mbs.email_report_endday, '') as email_report_endday,
+COALESCE(mbs.flag_notification_end, false) as flag_notification_end,
+COALESCE(mbs.notification_end::text, '') as notification_end,
+COALESCE(mbs.flag_queue, false) as flag_queue,
+COALESCE(mbs.queue_reset_after_each, 0) as queue_reset_after_each,
+COALESCE(mbs.queue_start_from, 0) as queue_start_from,
+COALESCE(mbs.flag_guest_comment, false) as flag_guest_comment,
+COALESCE(mbs.flag_bill_name, false) as flag_bill_name,
+COALESCE(mbs.flag_note_payment, false) as flag_note_payment,
+COALESCE(mbs.flag_online_service_mobile_customer, false) as flag_online_service_mobile_customer,
+COALESCE(mbs.flag_barber_service, false) as flag_barber_service
 
 FROM master_branch mb
 LEFT JOIN master_brand mbd on mbd.id = mb.brand_id

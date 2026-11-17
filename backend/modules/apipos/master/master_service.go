@@ -500,7 +500,9 @@ mpm.use_authorization,
 mpm.fixed_amount,
 mpm.verification_code_mandatory,
 mpm.card_number_code_mandatory,
-mpm.payment_gateway_code
+mpm.payment_gateway_code,
+mpm.flag_all_visitpurpose as flag_all_visit_purpose,
+mpm.flag_mandatory_note
 
 FROM  master_payment_method mpm
 LEFT JOIN  master_payment_method_branches mpmd on mpmd.payment_method_id = mpm.id and mpmd.branch_id = ?

@@ -266,6 +266,8 @@ type MasterPaymentMethod struct {
 	VerificationCodeMandatory bool    `bun:"verification_code_mandatory" json:"verification_code_mandatory"`
 	CardNumberCodeMandatory   bool    `bun:"card_number_code_mandatory" json:"card_number_code_mandatory"`
 	PaymentGatewayCode        *string `bun:"payment_gateway_code" json:"payment_gateway_code"`
+	FlagAllVisitPurpose       bool    `bun:"flag_all_visit_purpose" json:"flag_all_visit_purpose"`
+	FlagMandatoryNote         bool    `bun:"flag_mandatory_note" json:"flag_mandatory_note"`
 }
 
 type MasterPaymentMethodGroup struct {

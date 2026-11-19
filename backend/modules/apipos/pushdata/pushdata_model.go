@@ -45,10 +45,20 @@ type PosOrderModel struct {
 	CustomerPhoneNumber *string `bun:"customer_phone_number" json:"customer_phone_number"`
 	ChasierName         *string `bun:"chasier_name" json:"chasier_name"`
 
-	DeliveryCost  string `bun:"delivery_cost,type:numeric(20,2)" json:"delivery_cost"`
-	OrderFee      string `bun:"order_fee,type:numeric(20,2)" json:"order_fee"`
-	ServiceCharge string `bun:"service_charge,type:numeric(20,2)" json:"service_charge"`
-	PlatformFee   string `bun:"platform_fee,type:numeric(20,2)" json:"platform_fee"`
+	DeliveryCost string `bun:"delivery_cost,type:numeric(20,2)" json:"delivery_cost"`
+	OrderFee     string `bun:"order_fee,type:numeric(20,2)" json:"order_fee"`
+
+	// TotalServiceCharge (migration 337, 2026-11-18) -- GANTI dari ServiceCharge/service_charge
+	// (nama lama, ambigu bisa disalahartikan tax_id service charge). POS Laravin (posv1-laravel)
+	// rename tr_order.service_charge->total_service_charge di tanggal yang sama, push JSON
+	// key-nya sekarang "total_service_charge", BUKAN "service_charge" lagi -- field lama
+	// DIHAPUS dari struct ini (bukan cuma rename tag) biar gak ada insert yang masih nulis ke
+	// kolom lama. WAJIB selaras sama pos_model.go sudocore2 (tabel pos_order yang SAMA).
+	TotalServiceCharge string `bun:"total_service_charge,type:numeric(20,2)" json:"total_service_charge"`
+
+	// PlatformFee DIHAPUS (2026-11-18) -- kolom tr_order.platform_fee sudah dihapus total di
+	// POS Laravel, gak pernah dikirim lagi. Kolom DB pos_order.platform_fee TETAP ADA (histori),
+	// cuma struct ini gak nulis ke situ lagi.
 
 	TotalItem *int64 `bun:"total_item" json:"total_item"`
 
@@ -131,8 +141,27 @@ type PosOrderDetailModel struct {
 
 	DiscountPercent string `bun:"discount_percent,type:numeric(20,2)" json:"discount_percent"`
 	DiscountAmount  string `bun:"discount_amount,type:numeric(20,2)" json:"discount_amount"`
-	Dpp             string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
-	NetDpp          string `bun:"net_dpp,type:numeric(20,2)" json:"net_dpp"`
+
+	// NetPrice/Dpp (migration 338, 2026-11-18, net_dpp JADI MATI) -- POS Laravel nge-SWAP
+	// makna 2 kolom dpp/net_dpp lama DI TANGGAL YANG SAMA: dpp LAMA = net price SEBELUM diskon
+	// (sekarang kolom net_price BARU di sini), net_dpp LAMA = DPP SETELAH diskon (sekarang
+	// yang dibaca dari kolom dpp EXISTING -- nama kolom SAMA, makna BERUBAH). net_dpp jadi
+	// mati sejak migration ini (gak dikirim POS lagi, dibiarkan NULL buat baris baru) --
+	// field Go NetDpp DIHAPUS dari struct biar gak ada insert yang masih nulis ke situ.
+	// BREAKING POINT bertanggal -- lihat migration 338_*.sql buat detail lengkap. WAJIB
+	// selaras sama pos_model.go sudocore2 (tabel pos_order_detail yang SAMA).
+	NetPrice string `bun:"net_price,type:numeric(20,2)" json:"net_price"`
+	Dpp      string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+
+	// ServiceChargeId/ServiceChargeRate/ServiceChargeAmount (migration 338, 2026-11-18, BARU)
+	// -- kolom baru tr_order_detail POS Laravel, formula CalculateLineItem() server-side.
+	// ServiceChargeId nullable (item tanpa service charge, valid). JSON key snake_case --
+	// POS Laravel serialize langsung dari nama kolom Eloquent apa adanya (tr_order_detail),
+	// BUKAN camelCase (beda dari request body SaveOrder() yang emang camelCase). WAJIB
+	// selaras sama pos_model.go sudocore2.
+	ServiceChargeId     *int64 `bun:"service_charge_id" json:"service_charge_id"`
+	ServiceChargeRate   string `bun:"service_charge_rate,type:numeric(20,2)" json:"service_charge_rate"`
+	ServiceChargeAmount string `bun:"service_charge_amount,type:numeric(20,2)" json:"service_charge_amount"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 
@@ -186,8 +215,17 @@ type PosOrderDetailPackageModel struct {
 
 	DiscountPercent string `bun:"discount_percent,type:numeric(20,2)" json:"discount_percent"`
 	DiscountAmount  string `bun:"discount_amount,type:numeric(20,2)" json:"discount_amount"`
-	Dpp             string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
-	NetDpp          string `bun:"net_dpp,type:numeric(20,2)" json:"net_dpp"`
+
+	// NetPrice/Dpp (migration 339, 2026-11-18, net_dpp JADI MATI) -- sama pola & alasan
+	// persis PosOrderDetailModel di atas, lihat komentarnya.
+	NetPrice string `bun:"net_price,type:numeric(20,2)" json:"net_price"`
+	Dpp      string `bun:"dpp,type:numeric(20,2)" json:"dpp"`
+
+	// ServiceChargeId/ServiceChargeRate/ServiceChargeAmount (migration 339, 2026-11-18, BARU)
+	// -- sama pola & alasan persis PosOrderDetailModel di atas.
+	ServiceChargeId     *int64 `bun:"service_charge_id" json:"service_charge_id"`
+	ServiceChargeRate   string `bun:"service_charge_rate,type:numeric(20,2)" json:"service_charge_rate"`
+	ServiceChargeAmount string `bun:"service_charge_amount,type:numeric(20,2)" json:"service_charge_amount"`
 
 	Total string `bun:"total,type:numeric(20,2)" json:"total"`
 

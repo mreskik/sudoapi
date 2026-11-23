@@ -73,6 +73,12 @@ type PosOrderModel struct {
 	// customer_phone_number (lihat DOKUMENTASI API/SYNC/SYNC PUSH.md posv1-laravel).
 	RoundingAmount string `bun:"rounding_amount,type:numeric(20,2)" json:"rounding_amount"`
 
+	// GrandTotal (migration 349 sudocore2, 2026-11-20) -- SUSULAN RoundingAmount di atas (kolom
+	// baru di tr_order/pos_order, lihat migration 349) -- sama alasan/resiko WAJIB selaras sama
+	// pos_model.go sudocore2, gap ini sempat kejadian beneran (grand_total ke-drop diam-diam
+	// sampai ditemukan & diperbaiki, 2026-11-20).
+	GrandTotal string `bun:"grand_total,type:numeric(20,2)" json:"grand_total"`
+
 	FlagInclusiveTax *bool `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 
 	CancelNotes *string    `bun:"cancel_notes" json:"cancel_notes"`

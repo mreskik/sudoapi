@@ -27,15 +27,24 @@ type PendingOrder struct {
 	// OrderSource: channel asal order -- 'mobile' (member app) atau 'qr' (QR Order, belum ada
 	// endpoint Create-nya per 2026-09-17, migration sudocore2 209) -- dipakai POS buat nulis
 	// tr_order.order_source (MobileOrderPullServices::processOrder()), BUKAN cuma dilewatin.
-	OrderSource         string  `bun:"order_source" json:"order_source"`
-	Pax                 *int    `bun:"pax" json:"pax"`
-	OrderFee            float64 `bun:"order_fee" json:"order_fee"`
-	ServiceCharge       float64 `bun:"service_charge" json:"service_charge"`
-	PlatformFee         float64 `bun:"platform_fee" json:"platform_fee"`
-	DeliveryCost        float64 `bun:"delivery_cost" json:"delivery_cost"`
-	SubTotal            float64 `bun:"sub_total" json:"sub_total"`
-	TotalDiscount       float64 `bun:"total_discount" json:"total_discount"`
-	TotalTax            float64 `bun:"total_tax" json:"total_tax"`
+	OrderSource string  `bun:"order_source" json:"order_source"`
+	Pax         *int    `bun:"pax" json:"pax"`
+	OrderFee    float64 `bun:"order_fee" json:"order_fee"`
+	// TotalServiceCharge (2026-11-19, RENAME dari ServiceCharge/mb_order.service_charge) --
+	// kolom lama DIHAPUS (lihat migration sudocore2 346), gak lagi ada "service_charge" di
+	// mb_order. PlatformFee (field lama) DIHAPUS TOTAL dari struct ini -- kolomnya sendiri
+	// udah di-drop dari mb_order (migration sudocore2 345), gak ada apa pun yang bisa dibaca.
+	TotalServiceCharge float64 `bun:"total_service_charge" json:"total_service_charge"`
+	DeliveryCost       float64 `bun:"delivery_cost" json:"delivery_cost"`
+	SubTotal           float64 `bun:"sub_total" json:"sub_total"`
+	TotalDiscount      float64 `bun:"total_discount" json:"total_discount"`
+	TotalTax           float64 `bun:"total_tax" json:"total_tax"`
+	// GrandTotal/RoundingAmount (2026-11-20, BARU) -- mb_order dapat 2 kolom ini (migration
+	// sudocore2 348) karena sudomobile sekarang ikut menerapkan rounding (lihat
+	// sudomobile/backend/pricing/pricing.go, CalculateRoundingAmount()). TotalBilling TETAP
+	// nilai final (grand_total + rounding_amount), field lama gak berubah arti.
+	GrandTotal          float64 `bun:"grand_total" json:"grand_total"`
+	RoundingAmount      float64 `bun:"rounding_amount" json:"rounding_amount"`
 	TotalBilling        float64 `bun:"total_billing" json:"total_billing"`
 	FlagInclusiveTax    bool    `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
 	CustomerPhoneNumber *string `bun:"customer_phone_number" json:"customer_phone_number"`
@@ -51,26 +60,36 @@ type PendingOrder struct {
 // PendingOrderDetail: mb_order_detail, 1 baris per item (termasuk induk package -- baris
 // package group sendiri juga masuk sini, isi-isinya di Package).
 type PendingOrderDetail struct {
-	ULID              string   `bun:"ulid" json:"ulid"`
-	OrderNumber       string   `bun:"order_number" json:"-"`
-	PricelistDetailID int64    `bun:"pricelist_detail_id" json:"pricelist_detail_id"`
-	MenuID            int64    `bun:"menu_id" json:"menu_id"`
-	CategoryID        *int64   `bun:"category_id" json:"category_id"`
-	SubcategoryID     *int64   `bun:"subcategory_id" json:"subcategory_id"`
-	Qty               int64    `bun:"qty" json:"qty"`
-	FlagInclusiveTax  bool     `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
-	Price             float64  `bun:"price" json:"price"`
-	TaxID             *int64   `bun:"tax_id" json:"tax_id"`
-	TaxType           *string  `bun:"tax_type" json:"tax_type"`
-	TaxRate           float64  `bun:"tax_rate" json:"tax_rate"`
-	TaxAmount         float64  `bun:"tax_amount" json:"tax_amount"`
-	Dpp               *float64 `bun:"dpp" json:"dpp"`
-	NetDpp            *float64 `bun:"net_dpp" json:"net_dpp"`
-	PromoID           *int64   `bun:"promo_id" json:"promo_id"`
-	DiscountPercent   float64  `bun:"discount_percent" json:"discount_percent"`
-	DiscountAmount    float64  `bun:"discount_amount" json:"discount_amount"`
-	Total             float64  `bun:"total" json:"total"`
-	Notes             *string  `bun:"notes" json:"notes"`
+	ULID              string  `bun:"ulid" json:"ulid"`
+	OrderNumber       string  `bun:"order_number" json:"-"`
+	PricelistDetailID int64   `bun:"pricelist_detail_id" json:"pricelist_detail_id"`
+	MenuID            int64   `bun:"menu_id" json:"menu_id"`
+	CategoryID        *int64  `bun:"category_id" json:"category_id"`
+	SubcategoryID     *int64  `bun:"subcategory_id" json:"subcategory_id"`
+	Qty               int64   `bun:"qty" json:"qty"`
+	FlagInclusiveTax  bool    `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
+	Price             float64 `bun:"price" json:"price"`
+	TaxID             *int64  `bun:"tax_id" json:"tax_id"`
+	TaxType           *string `bun:"tax_type" json:"tax_type"`
+	TaxRate           float64 `bun:"tax_rate" json:"tax_rate"`
+	TaxAmount         float64 `bun:"tax_amount" json:"tax_amount"`
+	// NetPrice/Dpp (2026-11-19, RENAME) -- dulu Dpp/NetDpp (mb_order_detail.dpp/net_dpp). Kolom
+	// net_dpp DIHAPUS TOTAL (migration sudocore2 345), net_price kolom BARU. Makna GESER: NetPrice
+	// sekarang "sebelum diskon" (dulu dipegang Dpp/"dpp"), Dpp sekarang "setelah diskon" (dulu
+	// dipegang NetDpp/"net_dpp") -- SAMA PERSIS pola rename di sudomobile/pricing.go.
+	NetPrice *float64 `bun:"net_price" json:"net_price"`
+	Dpp      *float64 `bun:"dpp" json:"dpp"`
+	// ServiceChargeID/Rate/Amount (2026-11-19, BARU) -- mirror kolom baru mb_order_detail,
+	// WAJIB diteruskan ke POS (MobileOrderPullServices.php) biar breakdown service charge per
+	// item order mobile akurat di tr_order_detail, bukan diam-diam NULL/0.
+	ServiceChargeID     *int64   `bun:"service_charge_id" json:"service_charge_id"`
+	ServiceChargeRate   *float64 `bun:"service_charge_rate" json:"service_charge_rate"`
+	ServiceChargeAmount *float64 `bun:"service_charge_amount" json:"service_charge_amount"`
+	PromoID             *int64   `bun:"promo_id" json:"promo_id"`
+	DiscountPercent     float64  `bun:"discount_percent" json:"discount_percent"`
+	DiscountAmount      float64  `bun:"discount_amount" json:"discount_amount"`
+	Total               float64  `bun:"total" json:"total"`
+	Notes               *string  `bun:"notes" json:"notes"`
 
 	Package []PendingOrderDetailPackage `bun:"-" json:"package"`
 }
@@ -78,26 +97,30 @@ type PendingOrderDetail struct {
 // PendingOrderDetailPackage: mb_order_detail_package, nested di dalam detail induknya lewat
 // mb_order_detail_ulid.
 type PendingOrderDetailPackage struct {
-	ULID              string   `bun:"ulid" json:"ulid"`
-	MbOrderDetailULID string   `bun:"mb_order_detail_ulid" json:"-"`
-	MenuPackageID     int64    `bun:"menu_package_id" json:"menu_package_id"`
-	MenuID            int64    `bun:"menu_id" json:"menu_id"`
-	CategoryID        *int64   `bun:"category_id" json:"category_id"`
-	SubcategoryID     *int64   `bun:"subcategory_id" json:"subcategory_id"`
-	Qty               int64    `bun:"qty" json:"qty"`
-	FlagInclusiveTax  bool     `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
-	Price             float64  `bun:"price" json:"price"`
-	TaxID             *int64   `bun:"tax_id" json:"tax_id"`
-	TaxType           *string  `bun:"tax_type" json:"tax_type"`
-	TaxRate           float64  `bun:"tax_rate" json:"tax_rate"`
-	TaxAmount         float64  `bun:"tax_amount" json:"tax_amount"`
-	Dpp               *float64 `bun:"dpp" json:"dpp"`
-	NetDpp            *float64 `bun:"net_dpp" json:"net_dpp"`
-	PromoID           *int64   `bun:"promo_id" json:"promo_id"`
-	DiscountPercent   float64  `bun:"discount_percent" json:"discount_percent"`
-	DiscountAmount    float64  `bun:"discount_amount" json:"discount_amount"`
-	Total             float64  `bun:"total" json:"total"`
-	Notes             *string  `bun:"notes" json:"notes"`
+	ULID              string  `bun:"ulid" json:"ulid"`
+	MbOrderDetailULID string  `bun:"mb_order_detail_ulid" json:"-"`
+	MenuPackageID     int64   `bun:"menu_package_id" json:"menu_package_id"`
+	MenuID            int64   `bun:"menu_id" json:"menu_id"`
+	CategoryID        *int64  `bun:"category_id" json:"category_id"`
+	SubcategoryID     *int64  `bun:"subcategory_id" json:"subcategory_id"`
+	Qty               int64   `bun:"qty" json:"qty"`
+	FlagInclusiveTax  bool    `bun:"flag_inclusive_tax" json:"flag_inclusive_tax"`
+	Price             float64 `bun:"price" json:"price"`
+	TaxID             *int64  `bun:"tax_id" json:"tax_id"`
+	TaxType           *string `bun:"tax_type" json:"tax_type"`
+	TaxRate           float64 `bun:"tax_rate" json:"tax_rate"`
+	TaxAmount         float64 `bun:"tax_amount" json:"tax_amount"`
+	// NetPrice/Dpp/ServiceCharge* -- SAMA PERSIS pola PendingOrderDetail di atas.
+	NetPrice            *float64 `bun:"net_price" json:"net_price"`
+	Dpp                 *float64 `bun:"dpp" json:"dpp"`
+	ServiceChargeID     *int64   `bun:"service_charge_id" json:"service_charge_id"`
+	ServiceChargeRate   *float64 `bun:"service_charge_rate" json:"service_charge_rate"`
+	ServiceChargeAmount *float64 `bun:"service_charge_amount" json:"service_charge_amount"`
+	PromoID             *int64   `bun:"promo_id" json:"promo_id"`
+	DiscountPercent     float64  `bun:"discount_percent" json:"discount_percent"`
+	DiscountAmount      float64  `bun:"discount_amount" json:"discount_amount"`
+	Total               float64  `bun:"total" json:"total"`
+	Notes               *string  `bun:"notes" json:"notes"`
 }
 
 // PendingOrderPayment: mb_order_payment, 1 baris FINAL per order (settled payment, gak ada

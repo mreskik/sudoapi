@@ -88,14 +88,19 @@ type BranchData struct {
 	EnddayPaymentMethodSummary bool `bun:"endday_payment_method_summary"`
 	EnddayStaffPaymentSummary  bool `bun:"endday_staff_payment_summary"`
 	EnddayCashFlowSummary      bool `bun:"endday_cash_flow_summary"`
-	ShiftSalesSummary          bool `bun:"shift_sales_summary"`
-	ShiftSalesTypeSummary      bool `bun:"shift_sales_type_summary"`
-	ShiftOrderSourceSummary    bool `bun:"shift_order_source_summary"`
-	ShiftItemCategorySummary   bool `bun:"shift_item_category_summary"`
-	ShiftStaffSalesSummary     bool `bun:"shift_staff_sales_summary"`
-	ShiftPaymentMethodSummary  bool `bun:"shift_payment_method_summary"`
-	ShiftStaffPaymentSummary   bool `bun:"shift_staff_payment_summary"`
-	ShiftCashFlowSummary       bool `bun:"shift_cash_flow_summary"`
+	// EnddayItemByCategorySummary/ShiftItemByCategorySummary (sudocore2 migration 353, BARU
+	// 2026-11-23) -- section BARU, breakdown NESTED kategori->item (BEDA dari
+	// EnddayItemCategorySummary di atas yang FLAT per kategori doang).
+	EnddayItemByCategorySummary bool `bun:"endday_item_by_category_summary"`
+	ShiftSalesSummary           bool `bun:"shift_sales_summary"`
+	ShiftSalesTypeSummary       bool `bun:"shift_sales_type_summary"`
+	ShiftOrderSourceSummary     bool `bun:"shift_order_source_summary"`
+	ShiftItemCategorySummary    bool `bun:"shift_item_category_summary"`
+	ShiftStaffSalesSummary      bool `bun:"shift_staff_sales_summary"`
+	ShiftPaymentMethodSummary   bool `bun:"shift_payment_method_summary"`
+	ShiftStaffPaymentSummary    bool `bun:"shift_staff_payment_summary"`
+	ShiftCashFlowSummary        bool `bun:"shift_cash_flow_summary"`
+	ShiftItemByCategorySummary  bool `bun:"shift_item_by_category_summary"`
 }
 
 type Station struct {

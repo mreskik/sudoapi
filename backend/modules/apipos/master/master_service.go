@@ -114,6 +114,7 @@ COALESCE(mbprs.endday_staff_sales_summary, true) as endday_staff_sales_summary,
 COALESCE(mbprs.endday_payment_method_summary, true) as endday_payment_method_summary,
 COALESCE(mbprs.endday_staff_payment_summary, true) as endday_staff_payment_summary,
 COALESCE(mbprs.endday_cash_flow_summary, true) as endday_cash_flow_summary,
+COALESCE(mbprs.endday_item_by_category_summary, true) as endday_item_by_category_summary,
 COALESCE(mbprs.shift_sales_summary, true) as shift_sales_summary,
 COALESCE(mbprs.shift_sales_type_summary, true) as shift_sales_type_summary,
 COALESCE(mbprs.shift_order_source_summary, true) as shift_order_source_summary,
@@ -121,7 +122,8 @@ COALESCE(mbprs.shift_item_category_summary, true) as shift_item_category_summary
 COALESCE(mbprs.shift_staff_sales_summary, true) as shift_staff_sales_summary,
 COALESCE(mbprs.shift_payment_method_summary, true) as shift_payment_method_summary,
 COALESCE(mbprs.shift_staff_payment_summary, true) as shift_staff_payment_summary,
-COALESCE(mbprs.shift_cash_flow_summary, true) as shift_cash_flow_summary
+COALESCE(mbprs.shift_cash_flow_summary, true) as shift_cash_flow_summary,
+COALESCE(mbprs.shift_item_by_category_summary, true) as shift_item_by_category_summary
 
 FROM master_branch mb
 LEFT JOIN master_brand mbd on mbd.id = mb.brand_id

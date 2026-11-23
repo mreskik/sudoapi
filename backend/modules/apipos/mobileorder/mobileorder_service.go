@@ -14,8 +14,8 @@ func GetPending(ctx context.Context, db *bun.DB, branchID int64) ([]PendingOrder
 	var orders []PendingOrder
 	err := db.NewRaw(`
 		SELECT mo.order_number, mo.branch_id, mo.member_id, mo.visit_purpose_id, mo.order_type, mo.order_source, mo.pax,
-			mo.order_fee, mo.service_charge, mo.platform_fee, mo.delivery_cost,
-			mo.sub_total, mo.total_discount, mo.total_tax, mo.total_billing, mo.flag_inclusive_tax,
+			mo.order_fee, mo.total_service_charge, mo.delivery_cost,
+			mo.sub_total, mo.total_discount, mo.total_tax, mo.grand_total, mo.rounding_amount, mo.total_billing, mo.flag_inclusive_tax,
 			mo.customer_phone_number, mo.payment_number, mo.payment_at, mo.payment_notes, mo.created_at,
 			mo.order_name, COALESCE(mm.name, '') AS member_name
 		FROM mb_order mo
@@ -42,7 +42,8 @@ func GetPending(ctx context.Context, db *bun.DB, branchID int64) ([]PendingOrder
 	var details []PendingOrderDetail
 	if err := db.NewRaw(`
 		SELECT ulid, order_number, pricelist_detail_id, menu_id, category_id, subcategory_id, qty,
-			flag_inclusive_tax, price, tax_id, tax_type, tax_rate, tax_amount, dpp, net_dpp,
+			flag_inclusive_tax, price, tax_id, tax_type, tax_rate, tax_amount, net_price, dpp,
+			service_charge_id, service_charge_rate, service_charge_amount,
 			promo_id, discount_percent, discount_amount, total, notes
 		FROM mb_order_detail
 		WHERE order_number IN (?)
@@ -60,7 +61,8 @@ func GetPending(ctx context.Context, db *bun.DB, branchID int64) ([]PendingOrder
 	if len(detailULIDs) > 0 {
 		if err := db.NewRaw(`
 			SELECT ulid, mb_order_detail_ulid, menu_package_id, menu_id, category_id, subcategory_id,
-				qty, flag_inclusive_tax, price, tax_id, tax_type, tax_rate, tax_amount, dpp, net_dpp,
+				qty, flag_inclusive_tax, price, tax_id, tax_type, tax_rate, tax_amount, net_price, dpp,
+				service_charge_id, service_charge_rate, service_charge_amount,
 				promo_id, discount_percent, discount_amount, total, notes
 			FROM mb_order_detail_package
 			WHERE mb_order_detail_ulid IN (?)

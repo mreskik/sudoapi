@@ -52,6 +52,8 @@ type BranchData struct {
 	// langsung. CRUD+sync doang buat sekarang, penggunaan belum digarap.
 	DomainReceipt        string `bun:"domain_receipt"`
 	WhatsappTemplateText string `bun:"whatsapp_template_text"`
+	// (2026-11-24: kolom rounding_mode DIHAPUS dari master_branch_setting (migration 354 sudocore2),
+	// jadi field RoundingMode/key JSON "RoundingMode" ke POS ikut hilang -- sisa 16 kolom di bawah.)
 	// 17 kolom berikut (2026-11-03) -- sisa kolom master_branch_setting yang BELUM ditarik
 	// sebelumnya (cuma DomainReceipt/WhatsappTemplateText di atas), ditambahkan biar
 	// get_data_branch 1:1 sama skema ERP. Semua di-COALESCE di query (branchDataQuery) biar
@@ -60,7 +62,6 @@ type BranchData struct {
 	FlagTimeOutUser                 bool   `bun:"flag_time_out_user"`
 	TimeOutSecond                   int64  `bun:"time_out_second"`
 	FlagRounding                    bool   `bun:"flag_rounding"`
-	RoundingMode                    string `bun:"rounding_mode"`
 	RoundingNearstValue             string `bun:"rounding_nearst_value"`
 	FlagEmailReportEndday           bool   `bun:"flag_email_report_endday"`
 	EmailReportEndday               string `bun:"email_report_endday"`

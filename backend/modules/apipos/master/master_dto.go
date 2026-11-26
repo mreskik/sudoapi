@@ -277,6 +277,7 @@ type MasterPaymentMethod struct {
 	PaymentGatewayCode        *string `bun:"payment_gateway_code" json:"payment_gateway_code"`
 	FlagAllVisitPurpose       bool    `bun:"flag_all_visit_purpose" json:"flag_all_visit_purpose"`
 	FlagMandatoryNote         bool    `bun:"flag_mandatory_note" json:"flag_mandatory_note"`
+	IsActive                  bool    `bun:"is_active" json:"is_active"` // metode nonaktif tetap dikirim, POS yang memfilter
 }
 
 type MasterPaymentMethodGroup struct {
@@ -386,9 +387,10 @@ type MasterPromo struct {
 	ID   int    `bun:"id" json:"id"`
 	Name string `bun:"name" json:"name"`
 	Code string `bun:"code" json:"code"`
-	Type string `bun:"type" json:"type"` // rupiah, percent, freeitem
+	Type string `bun:"type" json:"type"` // rupiah, percent, freeitem, bill
 
 	TypeRupiahAmount       string  `bun:"type_rupiah_amount" json:"type_rupiah_amount"`
+	TypeBillAmount         string  `bun:"type_bill_amount" json:"type_bill_amount"` // type=bill (ERP migration 357)
 	TypePercentUseLimit    bool    `bun:"type_percent_use_limit" json:"type_percent_use_limit"`
 	TypePercentRate        *string `bun:"type_percent_rate" json:"type_percent_rate,omitempty"`
 	TypePercentLimitAmount string  `bun:"type_percent_limit_amount" json:"type_percent_limit_amount"`

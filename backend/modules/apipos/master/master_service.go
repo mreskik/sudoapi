@@ -505,11 +505,12 @@ mpm.verification_code_mandatory,
 mpm.card_number_code_mandatory,
 mpm.payment_gateway_code,
 mpm.flag_all_visitpurpose as flag_all_visit_purpose,
-mpm.flag_mandatory_note
+mpm.flag_mandatory_note,
+mpm.is_active
 
 FROM  master_payment_method mpm
 LEFT JOIN  master_payment_method_branches mpmd on mpmd.payment_method_id = mpm.id and mpmd.branch_id = ?
-WHERE mpm.is_active = true and (mpm.flag_all_branch = true or mpmd.id is not null)`, branch_id).Scan(context, &data)
+WHERE (mpm.flag_all_branch = true or mpmd.id is not null)`, branch_id).Scan(context, &data)
 
 	if err != nil {
 		return data, err
@@ -771,6 +772,7 @@ mp.name,
 mp.code,
 mp.type,
 mp.type_rupiah_amount,
+mp.type_bill_amount,
 mp.type_percent_use_limit,
 mp.type_percent_rate,
 mp.type_percent_limit_amount,

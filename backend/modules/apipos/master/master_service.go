@@ -372,11 +372,13 @@ mipg.id,
 mipg.item_package_id,
 mipg.name,
 mipg.min_qty,
-mipg.max_qty
+mipg.max_qty,
+mipg.sequence
 
 FROM master_item_package_group mipg
 JOIN master_item_package mip on mip.id = mipg.item_package_id
-JOIN master_item mi on mi.id = mip.item_id`).Scan(context, &data)
+JOIN master_item mi on mi.id = mip.item_id
+ORDER BY mipg.sequence ASC, mipg.id ASC`).Scan(context, &data)
 	if err != nil {
 		return data, err
 	}

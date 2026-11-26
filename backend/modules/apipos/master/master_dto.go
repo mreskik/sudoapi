@@ -203,6 +203,9 @@ type ItemPackageGroup struct {
 	Name          string `bun:"name" json:"name"`
 	MinQTY        int    `bun:"min_qty" json:"min_qty"`
 	MaxQTY        int    `bun:"max_qty" json:"max_qty"`
+	// Sequence (2026-11-26): urutan tampil group di dalam 1 package (ERP master_item_package_group.sequence,
+	// sudocore2 migration 356). POS wajib sudah punya kolom mr_item_package_group.sequence sebelum ini di-deploy.
+	Sequence int `bun:"sequence" json:"sequence"`
 }
 
 type ItemPackageDetail struct {
